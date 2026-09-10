@@ -1,12 +1,13 @@
 import { SlidersHorizontal } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, Outlet } from 'react-router-dom'
 import { useCards } from '../../data/CardsContext'
 import { CARD_TYPES, DOMAIN_INFO, DOMAINS, SET_LABELS } from '../../data/types'
 import { normalizeName } from '../../decks/decklist'
 import { useT } from '../../i18n/I18nContext'
 import { useSettings, useStates } from '../hooks'
 import { Cost, CardImage } from '../components/CardBits'
+import type { CardLinkState } from './CardDetail'
 import { activeFilterCount } from './cardFilters'
 import { ModeTabs, useStudyMode } from './Decks'
 
@@ -139,7 +140,14 @@ export function CardsBrowser() {
           const status = !s || s.state === 0 ? 'new' : s.state === 2 && s.scheduled_days >= 21 ? 'mature' : 'learning'
           const dot = status === 'mature' ? 'bg-good' : status === 'learning' ? 'bg-hard' : 'bg-line'
           return (
-            <Link key={c.id} to={`/cards/${c.id}`} className="group panel overflow-hidden transition hover:border-accent">
+            <Link
+              key={c.id}
+              to={`/cards/${c.id}`}
+              state={{ fromList: true } satisfies CardLinkState}
+              className="group panel overflow-hidden transition hover:border-accent"
+              // Safari does not focus links on click; the modal returns focus to this link on close.
+              onClick={(e) => e.currentTarget.focus()}
+            >
               <CardImage card={c} className="rounded-none" />
               <div className="space-y-1 p-2">
                 <div className="flex items-center gap-1.5">
@@ -160,6 +168,8 @@ export function CardsBrowser() {
           {t('cards.showMore', { n: list.length - limit })}
         </button>
       )}
+      {/* Card detail modal (child route /cards/:cardId), rendered in a portal. */}
+      <Outlet />
     </div>
   )
 }

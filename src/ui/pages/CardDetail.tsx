@@ -1,8 +1,9 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ArrowLeft, Check, Plus } from 'lucide-react'
-import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Check, Plus } from 'lucide-react'
+import { useCallback, useState } from 'react'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useCards } from '../../data/CardsContext'
+import type { Card } from '../../data/types'
 import { forgetCard, updateCustomDeck, createCustomDeck } from '../../db/repo'
 import { db } from '../../db/schema'
 import { useT } from '../../i18n/I18nContext'
@@ -10,32 +11,41 @@ import { formatInterval } from '../../srs/scheduler'
 import { STUDY_MODES } from '../../study/modes'
 import { useCustomDecks } from '../hooks'
 import { CardBack, CardImage } from '../components/CardBits'
+import { Modal } from '../components/Modal'
 
+/** Navigation state set by the Cards list links, so closing can go back instead of pushing. */
+export type CardLinkState = { fromList: true }
+
+/** Card detail, shown in a modal over the Cards list (child route of `/cards`). */
 export function CardDetail() {
   const { t } = useT()
   const { cardId = '' } = useParams()
   const { byId } = useCards()
   const card = byId.get(cardId)
-  const states = useLiveQuery(() => db.cardStates.where('cardId').equals(cardId).toArray(), [cardId]) ?? []
-  const logs = useLiveQuery(() => db.reviewLogs.where('cardId').equals(cardId).toArray(), [cardId]) ?? []
+  const navigate = useNavigate()
+  const fromList = (useLocation().state as CardLinkState | null)?.fromList === true
+  // Opened from the list: go back so the history has no extra entry. Deep link or refresh: there
+  // may be no in-app entry to go back to, so replace the URL with the list instead.
+  const close = useCallback(() => (fromList ? navigate(-1) : navigate('/cards', { replace: true })), [fromList, navigate])
+
+  return (
+    <Modal label={card?.name ?? t('cardDetail.notFound')} onClose={close}>
+      {card ? <CardDetailContent card={card} /> : <p className="p-8 text-center text-muted">{t('cardDetail.notFound')}</p>}
+    </Modal>
+  )
+}
+
+function CardDetailContent({ card }: { card: Card }) {
+  const { t } = useT()
+  const states = useLiveQuery(() => db.cardStates.where('cardId').equals(card.id).toArray(), [card.id]) ?? []
+  const logs = useLiveQuery(() => db.reviewLogs.where('cardId').equals(card.id).toArray(), [card.id]) ?? []
   const custom = useCustomDecks()
   const [newDeck, setNewDeck] = useState('')
-
-  if (!card)
-    return (
-      <div className="p-8 text-center text-muted">
-        {t('cardDetail.notFound')} <Link to="/cards" className="underline">{t('common.back')}</Link>
-      </div>
-    )
 
   const now = new Date()
 
   return (
     <div className="space-y-4">
-      <Link to="/cards" className="inline-flex items-center gap-1 text-sm text-muted hover:text-ink">
-        <ArrowLeft size={16} className="shrink-0" aria-hidden />
-        {t('nav.cards')}
-      </Link>
       <div className="grid gap-4 md:grid-cols-[280px_1fr]">
         <CardImage card={card} className="mx-auto w-full max-w-[280px]" />
         <div className="panel p-4">
