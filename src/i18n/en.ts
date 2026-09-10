@@ -125,6 +125,8 @@ export const en: Record<MessageKey, Entry> = {
   'cards.sort.energy': 'Sort: cost',
   'cards.sort.name': 'Sort: name',
   'cards.metaOnly': 'Only ≥ {threshold}% play rate',
+  'cards.filters': 'Filters',
+  'cards.resetFilters': 'Reset',
   'cards.showMore': 'Show more ({n} left)',
 
   // Card detail
