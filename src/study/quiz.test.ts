@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Card } from '../data/types'
 import { getI18n } from '../i18n'
-import { availableKinds, hiddenRegions, makeQuestion, type QuizKind } from './quiz'
+import { availableKinds, hiddenRegions, makeQuestion, maskBoxes, NAME_REGIONS, type MaskBox, type QuizKind } from './quiz'
 
 let seed = 42
 const rng = () => {
@@ -51,7 +51,35 @@ describe('quiz', () => {
     expect(hiddenRegions('energy')).toEqual(['cost'])
     // Power runes, type + name banner and footer icons are all colored by domain; rules text stays visible
     expect(hiddenRegions('domain')).toEqual(['cost', 'banner', 'domain-icons'])
-    expect(hiddenRegions('name-from-image')).toEqual(['cost', 'might', 'lower'])
+    expect(hiddenRegions('name-from-image')).toEqual(NAME_REGIONS)
+  })
+
+  const covers = (boxes: readonly MaskBox[], x: number, y: number) =>
+    boxes.some((b) => x >= b.left && x <= b.left + b.width && y >= b.top && y <= b.top + b.height)
+
+  it('hides the name and both copies of the rules text of a landscape battlefield', () => {
+    const boxes = maskBoxes(pool[5], NAME_REGIONS)
+    // Measured on 1039×744 battlefield images, in % of the height: upside-down rules text along the
+    // top edge ~6-20, type tag + name ~60-78, rules text ~78-90
+    for (let x = 5; x <= 95; x += 5) {
+      for (const y of [6, 10, 15, 20, 61, 66, 72, 78, 84, 90]) expect(covers(boxes, x, y), `${x},${y}`).toBe(true)
+    }
+    // The illustration stays visible
+    expect(covers(boxes, 50, 40)).toBe(false)
+  })
+
+  it('turns the battlefield masks with the fallback image, which shows it rotated to portrait', () => {
+    const boxes = maskBoxes(pool[5], NAME_REGIONS, { fallback: true })
+    // Rotated a quarter turn: the top edge of the landscape card becomes the left edge
+    for (let y = 5; y <= 95; y += 5) {
+      for (const x of [6, 10, 15, 20, 61, 66, 72, 78, 84, 90]) expect(covers(boxes, x, y), `${x},${y}`).toBe(true)
+    }
+    expect(covers(boxes, 40, 50)).toBe(false)
+  })
+
+  it('keeps the portrait masks for the other card types', () => {
+    expect(maskBoxes(pool[0], ['cost'])).toEqual([{ left: 0, top: 0, width: 21, height: 23 }])
+    expect(maskBoxes(pool[0], NAME_REGIONS).some((b) => b.top < 15 && b.left < 50 && b.left + b.width > 50)).toBe(false)
   })
 
   it('writes the prompt in the requested language', () => {

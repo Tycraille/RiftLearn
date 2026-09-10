@@ -1,7 +1,7 @@
 import { useState, type CSSProperties } from 'react'
 import { DOMAIN_INFO, type Card, type Domain } from '../../data/types'
 import { useT } from '../../i18n/I18nContext'
-import type { CardRegion } from '../../study/quiz'
+import { maskBoxes, type CardRegion } from '../../study/quiz'
 
 // ---- Cost icons -------------------------------------------------------------
 
@@ -132,22 +132,13 @@ export function CardText({ text, className = '' }: { text: string | null; classN
 
 // ---- Image ------------------------------------------------------------------
 
-// Riftbound layout: cost top-left, might top-right, type + name banner around 51-64% of the
-// height, rules text and flavour below, domain icon(s) at the right end of the footer.
-const REGION_MASKS: Record<CardRegion, string> = {
-  cost: 'left-0 top-0 h-[23%] w-[21%]',
-  might: 'right-0 top-0 h-[15%] w-[30%]',
-  banner: 'inset-x-0 top-[50%] h-[15%]',
-  lower: 'inset-x-0 bottom-0 h-[49%]',
-  'domain-icons': 'right-0 bottom-0 h-[7%] w-[14%]',
-}
-
 export function CardImage({ card, className = '', hide = [] }: { card: Card; className?: string; hide?: readonly CardRegion[] }) {
   const { t } = useT()
   // The URL is derived from the current card; we only remember which card id failed on the CDN,
   // otherwise the image would stay stuck on the first card when the prop changes.
   const [failedId, setFailedId] = useState<string | null>(null)
-  const src = failedId === card.id ? card.imageFallback : card.imageUrl
+  const fallback = failedId === card.id
+  const src = fallback ? card.imageFallback : card.imageUrl
   return (
     <div className={`relative overflow-hidden rounded-[4.5%] bg-panel-2 ${className}`}>
       <img
@@ -158,8 +149,12 @@ export function CardImage({ card, className = '', hide = [] }: { card: Card; cla
         className="block h-auto w-full select-none"
         onError={() => failedId !== card.id && setFailedId(card.id)}
       />
-      {hide.map((r) => (
-        <div key={r} className={`absolute ${REGION_MASKS[r]} bg-bg/95 backdrop-blur-md`} />
+      {maskBoxes(card, hide, { fallback }).map((b, i) => (
+        <div
+          key={i}
+          className="absolute bg-bg/95 backdrop-blur-md"
+          style={{ left: `${b.left}%`, top: `${b.top}%`, width: `${b.width}%`, height: `${b.height}%` }}
+        />
       ))}
     </div>
   )
