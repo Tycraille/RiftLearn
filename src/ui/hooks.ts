@@ -26,11 +26,14 @@ export function useCustomDecks() {
 }
 
 export function useDecks(): Deck[] {
-  const { cards } = useCards()
-  const settings = useSettings()
+  const { cards, legends } = useCards()
+  const { playRateThreshold, legendPresenceThreshold } = useSettings()
   const custom = useCustomDecks()
   const { t } = useT()
-  return useMemo(() => deriveDecks(cards, settings.playRateThreshold, t, custom), [cards, settings.playRateThreshold, t, custom])
+  return useMemo(
+    () => deriveDecks(cards, playRateThreshold, t, custom, legends, legendPresenceThreshold),
+    [cards, playRateThreshold, t, custom, legends, legendPresenceThreshold],
+  )
 }
 
 export function useLogs() {

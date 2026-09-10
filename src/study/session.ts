@@ -6,8 +6,16 @@ import { isDue } from '../srs/scheduler'
 export interface Queue {
   /** due cards (already seen), most overdue first */
   due: Card[]
-  /** new cards, most played first, capped by the daily quota */
+  /** new cards, most played first (or in deck order), capped by the daily quota */
   fresh: Card[]
+}
+
+/** How new cards are introduced: by global play rate, or in the order of the deck's cards. */
+export type NewOrder = 'play' | 'deck'
+
+export interface QueueOptions {
+  now?: Date
+  newOrder?: NewOrder
 }
 
 export interface DeckCounts {
@@ -23,7 +31,7 @@ export function buildQueue(
   states: Map<string, CardState>,
   settings: Settings,
   today: DayCounts,
-  now = new Date(),
+  { now = new Date(), newOrder = 'play' }: QueueOptions = {},
 ): Queue {
   const due: { card: Card; due: number }[] = []
   const fresh: Card[] = []
@@ -33,7 +41,7 @@ export function buildQueue(
     else if (isDue(s, now)) due.push({ card, due: s.due })
   }
   due.sort((a, b) => a.due - b.due)
-  fresh.sort((a, b) => b.stats.play - a.stats.play)
+  if (newOrder === 'play') fresh.sort((a, b) => b.stats.play - a.stats.play)
   const newBudget = Math.max(0, settings.dailyNewLimit - today.newCount)
   const reviewBudget = Math.max(0, settings.dailyReviewLimit - today.reviewCount)
   return { due: due.slice(0, reviewBudget).map((d) => d.card), fresh: fresh.slice(0, newBudget) }

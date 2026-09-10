@@ -88,6 +88,25 @@ export function SettingsPage() {
           />
           <p className="text-xs text-muted">{t('settings.thresholdHelp')}</p>
         </div>
+        <div>
+          <div className="flex items-center justify-between">
+            <label className="font-medium" htmlFor="legend-threshold">
+              {t('settings.legendThreshold')}
+            </label>
+            <span className="text-sm text-muted">{t('settings.legendThresholdValue', { threshold: settings.legendPresenceThreshold })}</span>
+          </div>
+          <input
+            id="legend-threshold"
+            type="range"
+            min={5}
+            max={100}
+            step={5}
+            value={settings.legendPresenceThreshold}
+            onChange={(e) => saveSettings({ legendPresenceThreshold: Number(e.target.value) })}
+            className="mt-2 w-full accent-sky-400"
+          />
+          <p className="text-xs text-muted">{t('settings.legendThresholdHelp')}</p>
+        </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="label">{t('settings.dailyNew')}</label>
