@@ -61,6 +61,13 @@ Never:
 - edit `.github/workflows/deploy.yml`, run `npm run import`, or modify `public/data/cards.json`;
 - work on another issue in the same branch, or merge your own PR.
 
+## Specifying a feature (PO role)
+
+Run `/po <idea>` (project command in `.claude/commands/po.md`): the session studies the idea
+against the code and open issues, asks the maintainer the decisions that matter, proposes a
+scoped specification with acceptance criteria, and files an `enhancement` issue only after an
+explicit go.
+
 ## Filing defects (QA role)
 
 The QA brief lives in `qa/BRIEF-QA.md` (untracked, local only). If that file is missing, say so
