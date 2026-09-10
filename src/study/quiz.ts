@@ -41,7 +41,10 @@ export interface MaskBox {
 // Portrait cards: cost top-left, might top-right, type + name banner around 51-64% of the height,
 // rules text and flavour below, domain icon(s) at the right end of the footer.
 // Battlefields are landscape (1039×744): no cost nor might, rules text printed upside down along
-// the top edge (~6-20% of the height), type tag + name around 60-78%, rules text around 78-90%.
+// the top edge (~6-20% of the height), type tag + name over the left ~62% of the width around
+// 58-78%, rules text around 78-90%. The rest of the illustration stays visible.
+const BATTLEFIELD_NAME: MaskBox = { left: 0, top: 58, width: 64, height: 20 }
+
 const REGION_BOXES: Record<'portrait' | 'battlefield', Record<CardRegion, readonly MaskBox[]>> = {
   portrait: {
     cost: [{ left: 0, top: 0, width: 21, height: 23 }],
@@ -54,8 +57,8 @@ const REGION_BOXES: Record<'portrait' | 'battlefield', Record<CardRegion, readon
   battlefield: {
     cost: [],
     might: [],
-    banner: [{ left: 0, top: 58, width: 100, height: 21 }],
-    lower: [{ left: 0, top: 58, width: 100, height: 42 }],
+    banner: [BATTLEFIELD_NAME],
+    lower: [BATTLEFIELD_NAME, { left: 0, top: 77, width: 100, height: 23 }],
     'domain-icons': [],
     'mirrored-text': [{ left: 0, top: 5, width: 100, height: 16 }],
   },

@@ -60,21 +60,24 @@ describe('quiz', () => {
   it('hides the name and both copies of the rules text of a landscape battlefield', () => {
     const boxes = maskBoxes(pool[5], NAME_REGIONS)
     // Measured on 1039×744 battlefield images, in % of the height: upside-down rules text along the
-    // top edge ~6-20, type tag + name ~60-78, rules text ~78-90
+    // top edge ~6-20, type tag + name ~60-77 over the left ~60 % of the width, rules text ~78-90
     for (let x = 5; x <= 95; x += 5) {
-      for (const y of [6, 10, 15, 20, 61, 66, 72, 78, 84, 90]) expect(covers(boxes, x, y), `${x},${y}`).toBe(true)
+      for (const y of [6, 10, 15, 20, 80, 85, 90]) expect(covers(boxes, x, y), `${x},${y}`).toBe(true)
     }
-    // The illustration stays visible
-    expect(covers(boxes, 50, 40)).toBe(false)
+    for (let x = 3; x <= 60; x += 3) {
+      for (const y of [60, 66, 72, 77]) expect(covers(boxes, x, y), `${x},${y}`).toBe(true)
+    }
+    // The illustration stays visible, including beside the name
+    for (const [x, y] of [[50, 40], [20, 30], [80, 65], [90, 75]]) expect(covers(boxes, x, y), `${x},${y}`).toBe(false)
   })
 
   it('turns the battlefield masks with the fallback image, which shows it rotated to portrait', () => {
-    const boxes = maskBoxes(pool[5], NAME_REGIONS, { fallback: true })
-    // Rotated a quarter turn: the top edge of the landscape card becomes the left edge
-    for (let y = 5; y <= 95; y += 5) {
-      for (const x of [6, 10, 15, 20, 61, 66, 72, 78, 84, 90]) expect(covers(boxes, x, y), `${x},${y}`).toBe(true)
+    const landscape = maskBoxes(pool[5], NAME_REGIONS)
+    const rotated = maskBoxes(pool[5], NAME_REGIONS, { fallback: true })
+    // Rotated a quarter turn: a point (x, y) of the landscape card is shown at (y, 100 - x)
+    for (let x = 0; x <= 100; x += 2.5) {
+      for (let y = 0; y <= 100; y += 2.5) expect(covers(rotated, y, 100 - x), `${x},${y}`).toBe(covers(landscape, x, y))
     }
-    expect(covers(boxes, 40, 50)).toBe(false)
   })
 
   it('keeps the portrait masks for the other card types', () => {
