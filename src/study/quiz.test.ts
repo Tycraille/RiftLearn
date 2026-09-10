@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Card } from '../data/types'
 import { getI18n } from '../i18n'
-import { availableKinds, hiddenRegions, makeQuestion, type QuizKind } from './quiz'
+import { availableKinds, hiddenRegions, makeQuestion, maskBoxes, NAME_REGIONS, type MaskBox, type QuizKind } from './quiz'
 
 let seed = 42
 const rng = () => {
@@ -51,7 +51,38 @@ describe('quiz', () => {
     expect(hiddenRegions('energy')).toEqual(['cost'])
     // Power runes, type + name banner and footer icons are all colored by domain; rules text stays visible
     expect(hiddenRegions('domain')).toEqual(['cost', 'banner', 'domain-icons'])
-    expect(hiddenRegions('name-from-image')).toEqual(['cost', 'might', 'lower'])
+    expect(hiddenRegions('name-from-image')).toEqual(NAME_REGIONS)
+  })
+
+  const covers = (boxes: readonly MaskBox[], x: number, y: number) =>
+    boxes.some((b) => x >= b.left && x <= b.left + b.width && y >= b.top && y <= b.top + b.height)
+
+  it('hides the name and both copies of the rules text of a landscape battlefield', () => {
+    const boxes = maskBoxes(pool[5], NAME_REGIONS)
+    // Measured on 1039×744 battlefield images, in % of the height: upside-down rules text along the
+    // top edge ~6-20, type tag + name ~60-77 over the left ~60 % of the width, rules text ~78-90
+    for (let x = 5; x <= 95; x += 5) {
+      for (const y of [6, 10, 15, 20, 80, 85, 90]) expect(covers(boxes, x, y), `${x},${y}`).toBe(true)
+    }
+    for (let x = 3; x <= 60; x += 3) {
+      for (const y of [60, 66, 72, 77]) expect(covers(boxes, x, y), `${x},${y}`).toBe(true)
+    }
+    // The illustration stays visible, including beside the name
+    for (const [x, y] of [[50, 40], [20, 30], [80, 65], [90, 75]]) expect(covers(boxes, x, y), `${x},${y}`).toBe(false)
+  })
+
+  it('turns the battlefield masks with the fallback image, which shows it rotated to portrait', () => {
+    const landscape = maskBoxes(pool[5], NAME_REGIONS)
+    const rotated = maskBoxes(pool[5], NAME_REGIONS, { fallback: true })
+    // Rotated a quarter turn: a point (x, y) of the landscape card is shown at (y, 100 - x)
+    for (let x = 0; x <= 100; x += 2.5) {
+      for (let y = 0; y <= 100; y += 2.5) expect(covers(rotated, y, 100 - x), `${x},${y}`).toBe(covers(landscape, x, y))
+    }
+  })
+
+  it('keeps the portrait masks for the other card types', () => {
+    expect(maskBoxes(pool[0], ['cost'])).toEqual([{ left: 0, top: 0, width: 21, height: 23 }])
+    expect(maskBoxes(pool[0], NAME_REGIONS).some((b) => b.top < 15 && b.left < 50 && b.left + b.width > 50)).toBe(false)
   })
 
   it('writes the prompt in the requested language', () => {
