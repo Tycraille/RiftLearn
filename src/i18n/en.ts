@@ -58,7 +58,7 @@ export const en: Record<MessageKey, Entry> = {
   'interval.years': '{n} y',
 
   // Quiz prompts
-  'quiz.energy': 'What is the energy cost of “{name}”?',
+  'quiz.cost': 'What is the cost of “{name}”?',
   'quiz.domain': 'What is the domain of “{name}”?',
   'quiz.nameFromText': 'Which card has this effect?',
   'quiz.nameFromImage': 'Which card is this?',
@@ -67,6 +67,8 @@ export const en: Record<MessageKey, Entry> = {
   'card.energy': '{n} energy',
   'card.runeAny': 'rune of any domain',
   'card.rune': '{domain} rune',
+  'card.runes': { one: '{n} {domain} rune', other: '{n} {domain} runes' },
+  'card.cost': '{energy}, {runes}',
   'card.noText': 'No text.',
   'card.might': 'might',
   'card.exhaust': 'exhaust',

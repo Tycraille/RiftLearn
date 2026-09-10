@@ -1,7 +1,19 @@
 import { DOMAIN_INFO, DOMAINS, type Card, type Domain } from '../data/types'
 import type { Translate } from '../i18n'
 
-export type QuizKind = 'energy' | 'domain' | 'name-from-text' | 'name-from-image'
+export type QuizKind = 'cost' | 'domain' | 'name-from-text' | 'name-from-image'
+
+/** Full cost of a card: energy plus the number of domain runes (power). */
+export interface CardCost {
+  energy: number
+  power: number
+}
+
+export interface QuizOption {
+  /** text of the option, or its accessible label when it is drawn as a cost */
+  label: string
+  cost?: CardCost
+}
 
 export interface QuizQuestion {
   kind: QuizKind
@@ -12,7 +24,7 @@ export interface QuizQuestion {
   image?: string
   /** rules text shown as the prompt */
   text?: string
-  options: string[]
+  options: QuizOption[]
   answerIndex: number
 }
 
@@ -80,7 +92,7 @@ export function maskBoxes(card: Pick<Card, 'type'>, regions: readonly CardRegion
 /** Regions of the image to hide until the question is answered. */
 export function hiddenRegions(kind: QuizKind): readonly CardRegion[] {
   switch (kind) {
-    case 'energy':
+    case 'cost':
       return ['cost']
     case 'domain':
       return ['cost', 'banner', 'domain-icons']
@@ -136,10 +148,61 @@ function distractorCards(card: Card, pool: Card[], n: number, rng: Rng): Card[] 
   return out
 }
 
+/** A card with no rune in its cost has a `null` power. */
+export const cardCost = (card: Pick<Card, 'energy' | 'power'>): CardCost => ({ energy: card.energy ?? 0, power: card.power ?? 0 })
+
+/** Domains the runes of a card are colored with: both halves of each rune for a dual-domain card. */
+export const runeDomains = (card: Pick<Card, 'domain' | 'domains'>): string[] => (card.domains.length ? card.domains : [card.domain])
+
+/** Readable cost, e.g. "2 energy, 1 Calm/Chaos rune". */
+export function costLabel({ energy, power }: CardCost, domains: readonly string[], t: Translate): string {
+  const e = t('card.energy', { n: energy })
+  if (!power) return e
+  const domain = domains.map((d) => DOMAIN_INFO[d as Domain]?.label ?? d).join('/')
+  return t('card.cost', { energy: e, runes: t('card.runes', { n: power, domain }) })
+}
+
+const MAX_POWER = 4
+
+function weightedPick<T>(items: T[], weight: (item: T) => number, rng: Rng): T {
+  const weights = items.map(weight)
+  let r = rng() * weights.reduce((a, b) => a + b, 0)
+  for (let i = 0; i < items.length; i++) if ((r -= weights[i]) < 0) return items[i]
+  return items[items.length - 1]
+}
+
+/**
+ * Three wrong costs forming, with the answer, a 2×2 grid {energy, other energy} × {runes, other
+ * rune count}: every option has exactly one sibling with the same energy and one with the same
+ * rune count, so the set of options never points at the answer and both numbers must be known.
+ * The other rune count is ±1 (0 to 4), the other energy ±1 or ±2 (never negative); both are drawn
+ * weighted by how many cards of the pool have the resulting costs, plus one so that costs missing
+ * from a small pool remain possible. There is always at least one candidate for each.
+ */
+export function costDistractors(answer: CardCost, pool: Card[], rng: Rng): CardCost[] {
+  const key = (energy: number, power: number) => `${energy}/${power}`
+  const counts = new Map<string, number>()
+  for (const c of pool) {
+    if (c.energy == null) continue
+    const { energy, power } = cardCost(c)
+    counts.set(key(energy, power), (counts.get(key(energy, power)) ?? 0) + 1)
+  }
+  const count = (energy: number, power: number) => counts.get(key(energy, power)) ?? 0
+  const powers = [answer.power - 1, answer.power + 1].filter((p) => p >= 0 && (p <= MAX_POWER || p < answer.power))
+  const power = weightedPick(powers, (p) => count(answer.energy, p) + 1, rng)
+  const energies = [-2, -1, 1, 2].map((d) => answer.energy + d).filter((e) => e >= 0)
+  const energy = weightedPick(energies, (e) => count(e, answer.power) + count(e, power) + 1, rng)
+  return [
+    { energy: answer.energy, power },
+    { energy, power: answer.power },
+    { energy, power },
+  ]
+}
+
 export function availableKinds(card: Card): QuizKind[] {
   const kinds: QuizKind[] = ['name-from-image']
   if (card.text) kinds.push('name-from-text')
-  if (card.energy != null) kinds.push('energy')
+  if (card.energy != null) kinds.push('cost')
   if (card.domain !== 'multi') kinds.push('domain')
   return kinds
 }
@@ -149,39 +212,41 @@ export function makeQuestion(card: Card, pool: Card[], t: Translate, rng: Rng = 
   const k = kind && kinds.includes(kind) ? kind : kinds[Math.floor(rng() * kinds.length)]
 
   switch (k) {
-    case 'energy': {
-      const answer = String(card.energy)
-      const candidates = [...new Set(pool.map((c) => c.energy).filter((e): e is number => e != null && e !== card.energy))]
-      const near = candidates.sort((a, b) => Math.abs(a - card.energy!) - Math.abs(b - card.energy!)).slice(0, 6)
-      const wrong = shuffle(near, rng).slice(0, 3).map(String)
-      while (wrong.length < 3) wrong.push(String(card.energy! + wrong.length + 1))
-      return finish(k, card, t('quiz.energy', { name: card.name }), answer, wrong, rng, { image: card.imageUrl })
+    case 'cost': {
+      // Every option keeps the card's domains: only the numbers vary, the rune color is no hint
+      const domains = runeDomains(card)
+      const option = (cost: CardCost): QuizOption => ({ label: costLabel(cost, domains, t), cost })
+      const answer = cardCost(card)
+      const wrong = costDistractors(answer, pool, rng).map(option)
+      return finish(k, card, t('quiz.cost', { name: card.name }), option(answer), wrong, rng, { image: card.imageUrl })
     }
     case 'domain': {
       const answer = DOMAIN_INFO[card.domain].label
       const wrong = shuffle(DOMAINS.filter((d): d is Domain => d !== card.domain && d !== 'multi'), rng)
         .slice(0, 3)
-        .map((d) => DOMAIN_INFO[d].label)
-      return finish(k, card, t('quiz.domain', { name: card.name }), answer, wrong, rng, { image: card.imageUrl })
+        .map((d) => textOption(DOMAIN_INFO[d].label))
+      return finish(k, card, t('quiz.domain', { name: card.name }), textOption(answer), wrong, rng, { image: card.imageUrl })
     }
     case 'name-from-text': {
-      const wrong = distractorCards(card, pool, 3, rng).map((c) => c.name)
-      return finish(k, card, t('quiz.nameFromText'), card.name, wrong, rng, { text: card.textRich ?? card.text! })
+      const wrong = distractorCards(card, pool, 3, rng).map((c) => textOption(c.name))
+      return finish(k, card, t('quiz.nameFromText'), textOption(card.name), wrong, rng, { text: card.textRich ?? card.text! })
     }
     case 'name-from-image':
     default: {
-      const wrong = distractorCards(card, pool, 3, rng).map((c) => c.name)
-      return finish('name-from-image', card, t('quiz.nameFromImage'), card.name, wrong, rng, { image: card.imageUrl })
+      const wrong = distractorCards(card, pool, 3, rng).map((c) => textOption(c.name))
+      return finish('name-from-image', card, t('quiz.nameFromImage'), textOption(card.name), wrong, rng, { image: card.imageUrl })
     }
   }
 }
+
+const textOption = (label: string): QuizOption => ({ label })
 
 function finish(
   kind: QuizKind,
   card: Card,
   prompt: string,
-  answer: string,
-  wrong: string[],
+  answer: QuizOption,
+  wrong: QuizOption[],
   rng: Rng,
   extra: { image?: string; text?: string },
 ): QuizQuestion {

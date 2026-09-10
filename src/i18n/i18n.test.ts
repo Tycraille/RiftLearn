@@ -32,10 +32,10 @@ describe('i18n', () => {
   })
 
   it('interpolates parameters', () => {
-    expect(getI18n('fr').t('quiz.energy', { name: 'Defy' })).toBe('Quel est le coût en énergie de « Defy » ?')
-    expect(getI18n('en').t('quiz.energy', { name: 'Defy' })).toBe('What is the energy cost of “Defy”?')
+    expect(getI18n('fr').t('quiz.cost', { name: 'Defy' })).toBe('Quel est le coût de « Defy » ?')
+    expect(getI18n('en').t('quiz.cost', { name: 'Defy' })).toBe('What is the cost of “Defy”?')
     // interpolated values are not re-interpreted as placeholders
-    expect(getI18n('en').t('quiz.energy', { name: '{name}' })).toBe('What is the energy cost of “{name}”?')
+    expect(getI18n('en').t('quiz.cost', { name: '{name}' })).toBe('What is the cost of “{name}”?')
   })
 
   it('selects plural forms with each language rules', () => {

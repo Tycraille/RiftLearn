@@ -1,7 +1,7 @@
 import { useState, type CSSProperties } from 'react'
 import { DOMAIN_INFO, type Card, type Domain } from '../../data/types'
 import { useT } from '../../i18n/I18nContext'
-import { maskBoxes, type CardRegion } from '../../study/quiz'
+import { maskBoxes, runeDomains, type CardRegion } from '../../study/quiz'
 
 // ---- Cost icons -------------------------------------------------------------
 
@@ -18,21 +18,31 @@ export function EnergyPip({ n, size = 'md' }: { n: number | string; size?: 'sm' 
   )
 }
 
-const domainStyle = (d: string): CSSProperties => {
-  if (d === 'rainbow' || d === 'multi')
+const domainColor = (d: string) => DOMAIN_INFO[d as Domain]?.color ?? '#8A8F98'
+
+const runeStyle = (ds: readonly string[]): CSSProperties => {
+  if (ds.length > 1) {
+    // Drawn as a square turned 45°: bands across the top-left → bottom-right diagonal show up as
+    // left and right halves of the diamond, like the runes printed on dual-domain cards
+    const stops = ds.map((d, i) => `${domainColor(d)} ${(i * 100) / ds.length}% ${((i + 1) * 100) / ds.length}%`)
+    return { background: `linear-gradient(to top right, ${stops.join(', ')})` }
+  }
+  if (ds[0] === 'rainbow' || ds[0] === 'multi')
     return { background: 'conic-gradient(#E87500,#488C38,#643D8A,#C8102E,#2D8BBA,#D4A017,#E87500)' }
-  const info = DOMAIN_INFO[d as Domain]
-  return { background: info ? info.color : '#8A8F98' }
+  return { background: domainColor(ds[0]) }
 }
 
-export function RunePip({ domain, size = 'md' }: { domain: string; size?: 'sm' | 'md' | 'lg' }) {
+/** A domain rune; several domains draw one multicolor rune (a rune of a dual-domain card). */
+export function RunePip({ domain, size = 'md' }: { domain: string | readonly string[]; size?: 'sm' | 'md' | 'lg' }) {
   const { t } = useT()
   const cls = size === 'lg' ? 'h-8 w-8' : size === 'sm' ? 'h-3.5 w-3.5' : 'h-5 w-5'
-  const label = domain === 'rainbow' ? t('card.runeAny') : t('card.rune', { domain: DOMAIN_INFO[domain as Domain]?.label ?? domain })
+  const ds = typeof domain === 'string' ? [domain] : domain
+  const label =
+    ds[0] === 'rainbow' ? t('card.runeAny') : t('card.rune', { domain: ds.map((d) => DOMAIN_INFO[d as Domain]?.label ?? d).join('/') })
   return (
     <span
       className={`inline-block ${cls} rotate-45 rounded-[3px] ring-2 ring-slate-900/60 align-middle mx-0.5`}
-      style={domainStyle(domain)}
+      style={runeStyle(ds)}
       title={label}
       aria-label={label}
     />
@@ -52,19 +62,18 @@ export function DomainBadge({ domain, small }: { domain: string; small?: boolean
   )
 }
 
-/** Full cost: energy + domain runes. */
-export function Cost({ card, size = 'md' }: { card: Card; size?: 'sm' | 'md' | 'lg' }) {
-  if (card.energy == null && !card.power) return <span className="text-muted text-sm">—</span>
-  const runes: string[] = []
-  if (card.power) {
-    const ds = card.domains.length ? card.domains : [card.domain]
-    for (let i = 0; i < card.power; i++) runes.push(ds[i % ds.length])
-  }
+/**
+ * Full cost: energy + domain runes, of `card` or, when given, an explicit `cost` drawn in the colors
+ * of `card`. Every rune of a dual-domain card is bicolor (the data only gives the rune count).
+ */
+export function Cost({ card, cost = card, size = 'md' }: { card: Card; cost?: Pick<Card, 'energy' | 'power'>; size?: 'sm' | 'md' | 'lg' }) {
+  if (cost.energy == null && !cost.power) return <span className="text-muted text-sm">—</span>
+  const domains = runeDomains(card)
   return (
     <span className="inline-flex items-center gap-1">
-      {card.energy != null && <EnergyPip n={card.energy} size={size} />}
-      {runes.map((d, i) => (
-        <RunePip key={i} domain={d} size={size} />
+      {cost.energy != null && <EnergyPip n={cost.energy} size={size} />}
+      {Array.from({ length: cost.power ?? 0 }, (_, i) => (
+        <RunePip key={i} domain={domains} size={size} />
       ))}
     </span>
   )

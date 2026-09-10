@@ -13,7 +13,7 @@ import { STUDY_MODES, type StudyMode } from '../../study/modes'
 import { hiddenRegions, makeQuestion, NAME_REGIONS, type QuizQuestion } from '../../study/quiz'
 import { buildQueue, interleave } from '../../study/session'
 import { useDecks } from '../hooks'
-import { CardBack, CardImage, CardText, DomainBadge } from '../components/CardBits'
+import { CardBack, CardImage, CardText, Cost, DomainBadge } from '../components/CardBits'
 
 interface Item {
   card: Card
@@ -253,9 +253,15 @@ function QuizView({ q, chosen, onChoose }: { q: QuizQuestion; chosen: number | n
             else cls = 'bg-panel-2 opacity-50'
           }
           return (
-            <button key={i} disabled={answered} onClick={() => onChoose(i)} className={`rounded-lg px-4 py-3 text-left transition ${cls}`}>
+            <button
+              key={i}
+              disabled={answered}
+              onClick={() => onChoose(i)}
+              aria-label={opt.cost ? opt.label : undefined}
+              className={`flex items-center rounded-lg px-4 py-3 text-left transition ${cls}`}
+            >
               <kbd className="mr-2 hidden text-xs opacity-50 md:inline">{i + 1}</kbd>
-              {opt}
+              {opt.cost ? <Cost card={q.card} cost={opt.cost} /> : opt.label}
             </button>
           )
         })}

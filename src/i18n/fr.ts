@@ -58,7 +58,7 @@ export const fr = {
   'interval.years': { one: '{n} an', other: '{n} ans' },
 
   // Quiz prompts
-  'quiz.energy': 'Quel est le coût en énergie de « {name} » ?',
+  'quiz.cost': 'Quel est le coût de « {name} » ?',
   'quiz.domain': 'Quel est le domaine de « {name} » ?',
   'quiz.nameFromText': 'Quelle carte a cet effet ?',
   'quiz.nameFromImage': 'Quelle est cette carte ?',
@@ -67,6 +67,8 @@ export const fr = {
   'card.energy': '{n} énergie',
   'card.runeAny': 'rune de n’importe quel domaine',
   'card.rune': 'rune {domain}',
+  'card.runes': { one: '{n} rune {domain}', other: '{n} runes {domain}' },
+  'card.cost': '{energy}, {runes}',
   'card.noText': 'Pas de texte.',
   'card.might': 'puissance',
   'card.exhaust': 'épuiser',
