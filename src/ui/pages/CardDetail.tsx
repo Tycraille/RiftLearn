@@ -1,4 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
+import { ArrowLeft, Check, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useCards } from '../../data/CardsContext'
@@ -31,8 +32,9 @@ export function CardDetail() {
 
   return (
     <div className="space-y-4">
-      <Link to="/cards" className="text-sm text-muted hover:text-ink">
-        ← {t('nav.cards')}
+      <Link to="/cards" className="inline-flex items-center gap-1 text-sm text-muted hover:text-ink">
+        <ArrowLeft size={16} className="shrink-0" aria-hidden />
+        {t('nav.cards')}
       </Link>
       <div className="grid gap-4 md:grid-cols-[280px_1fr]">
         <CardImage card={card} className="mx-auto w-full max-w-[280px]" />
@@ -93,10 +95,10 @@ export function CardDetail() {
             return (
               <button
                 key={d.id}
-                className={`btn text-sm ${inDeck ? 'bg-good/20 text-good' : 'bg-panel-2 hover:bg-line'}`}
+                className={`btn inline-flex items-center gap-1 text-sm ${inDeck ? 'bg-good/20 text-good' : 'bg-panel-2 hover:bg-line'}`}
                 onClick={() => updateCustomDeck(d.id!, { cardIds: inDeck ? d.cardIds.filter((x) => x !== card.id) : [...d.cardIds, card.id] })}
               >
-                {inDeck ? '✓ ' : '+ '}
+                {inDeck ? <Check size={16} className="shrink-0" aria-hidden /> : <Plus size={16} className="shrink-0" aria-hidden />}
                 {d.name}
               </button>
             )

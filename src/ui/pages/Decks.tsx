@@ -1,3 +1,4 @@
+import { X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useCards } from '../../data/CardsContext'
@@ -130,8 +131,9 @@ function DeckTile({ deck, mode, states }: { deck: Deck; mode: StudyMode; states:
             className="text-muted hover:text-again"
             onClick={() => confirm(t('decks.confirmDelete', { name: deck.label })) && deleteCustomDeck(deck.customId!)}
             title={t('common.delete')}
+            aria-label={t('common.delete')}
           >
-            ✕
+            <X size={16} className="shrink-0" aria-hidden />
           </button>
         )}
       </div>
