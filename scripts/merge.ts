@@ -67,6 +67,21 @@ export interface Card {
   stats: { play: number; win: number | null; decks: number; copies: number; games: number }
 }
 
+export interface LegendCardStat {
+  id: string
+  presence: number
+  copies: number
+  category: string
+}
+
+export interface Legend {
+  slug: string
+  name: string
+  decks: number
+  share: number
+  cards: LegendCardStat[]
+}
+
 // ---- riftdecks --------------------------------------------------------------
 
 export function extractInlineVar<T>(html: string, name: string): T {
@@ -105,7 +120,7 @@ export function decodeEntities(s: string | null): string | null {
     .replace(/&gt;/g, '>')
     .replace(/&lt;/g, '<')
     .replace(/&quot;/g, '"')
-    .replace(/&#39;|&apos;/g, "'")
+    .replace(/&#0*39;|&apos;/g, "'")
     .replace(/&amp;/g, '&')
 }
 
@@ -113,6 +128,96 @@ export function riftboundIdFromImg(img: string): string {
   // "/img/cards/riftbound/OGN/ogn-045-298_cropped.png" -> "ogn-045-298"
   const base = path.posix.basename(img)
   return base.replace(/_(cropped|full)\.\w+$/, '')
+}
+
+/** "unl-150a-219" (variant shown by riftdecks) -> "unl-150-219" */
+export function baseCardId(rawId: string): string {
+  return rawId.replace(/^([a-z]+-\d+)[a-z]+(-\d+)$/, '$1$2')
+}
+
+// ---- riftdecks legends ------------------------------------------------------
+
+/** Legend from https://riftdecks.com/legends, before its card stats are fetched. */
+export type LegendSummary = Omit<Legend, 'cards'>
+
+/** A card of a riftdecks legend stats page, before the join with cards.json. */
+export interface LegendStatEntry extends LegendCardStat {
+  name: string
+}
+
+function attr(chunk: string, name: string): string | null {
+  // The lookbehind keeps "title" from matching "data-bs-title".
+  const m = chunk.match(new RegExp(`(?<![\\w-])${name}="([^"]*)"`))
+  return m ? m[1] : null
+}
+
+/** Parses the legend table of https://riftdecks.com/legends (one `<tr data-href="/legends/constructed/<slug>…">` per legend). */
+export function parseLegendList(html: string): LegendSummary[] {
+  const rows = html.split(/<tr data-href="\/legends\/constructed\//).slice(1)
+  return rows.map((row) => {
+    const slug = row.match(/^[a-z0-9-]+/)?.[0]
+    // The avatar title carries the full name ("Master Yi, Wuju Bladesman"); the visible label may be shortened.
+    const name = attr(row, 'title')
+    const decks = attr(row, 'data-totaldecks')
+    const share = attr(row, 'data-metashare')
+    if (!slug || !name || decks == null || share == null) {
+      throw new Error(`Unexpected legend row: ${row.slice(0, 200)}`)
+    }
+    return { slug, name: decodeEntities(name.trim())!, decks: Number(decks), share: Number(share) }
+  })
+}
+
+/** Legends with at least `minDecks` recorded decks, most played first. */
+export function selectLegends(legends: LegendSummary[], minDecks: number): LegendSummary[] {
+  return legends.filter((l) => l.decks >= minDecks).sort((a, b) => b.decks - a.decks || a.name.localeCompare(b.name))
+}
+
+/**
+ * Parses a riftdecks legend stats page (`/legends/<slug>/stats?board=…`): one `div.card-stat-item` per card,
+ * with `data-category` / `data-presence`, the card image (riftbound id) and the "×3.0" average copies badge.
+ */
+export function parseLegendStats(html: string): LegendStatEntry[] {
+  const items = html.split(/<div class="[^"]*\bcard-stat-item\b[^"]*"/).slice(1)
+  return items.map((item) => {
+    const category = attr(item, 'data-category')
+    const presence = attr(item, 'data-presence')
+    const img = item.match(/<img\b[^>]*\bsrc="([^"]*)"/)?.[1]
+    const name = item.match(/<img\b[^>]*\balt="([^"]*)"/)?.[1] ?? ''
+    const copies = item.match(/title="Average copies per deck">\s*×\s*([\d.]+)/)?.[1]
+    if (!category || presence == null || !img || !copies) {
+      throw new Error(`Unexpected card stat item: ${item.slice(0, 200)}`)
+    }
+    return {
+      id: baseCardId(riftboundIdFromImg(img)),
+      name: decodeEntities(name)!,
+      presence: Number(presence),
+      copies: Number(copies),
+      category,
+    }
+  })
+}
+
+/**
+ * Keeps the entries whose card is in cards.json, sorted by presence descending (one entry per card id).
+ * Returns the others as unmatched ("Name (id)").
+ */
+export function joinLegendStats(
+  entries: LegendStatEntry[],
+  knownIds: Set<string>,
+): { cards: LegendCardStat[]; unmatched: string[] } {
+  const cards: LegendCardStat[] = []
+  const unmatched: string[] = []
+  const seen = new Set<string>()
+  for (const e of [...entries].sort((a, b) => b.presence - a.presence)) {
+    if (!knownIds.has(e.id)) {
+      unmatched.push(`${e.name} (${e.id})`)
+      continue
+    }
+    if (seen.has(e.id)) continue
+    seen.add(e.id)
+    cards.push({ id: e.id, presence: e.presence, copies: e.copies, category: e.category })
+  }
+  return { cards, unmatched }
 }
 
 export function merge(stats: RiftdecksStat[], codex: CodexCard[]): { cards: Card[]; unmatched: string[] } {
@@ -128,8 +233,7 @@ export function merge(stats: RiftdecksStat[], codex: CodexCard[]): { cards: Card
   const unmatched: string[] = []
   for (const s of stats) {
     const rawId = riftboundIdFromImg(s.img)
-    // "unl-150a-219" (variant shown by riftdecks) -> "unl-150-219"
-    const id = rawId.replace(/^([a-z]+-\d+)[a-z]+(-\d+)$/, '$1$2')
+    const id = baseCardId(rawId)
     const c = byId.get(id) ?? byId.get(rawId) ?? byName.get(normalizeName(s.name))
     if (!c) unmatched.push(`${s.name} (${id})`)
     const domains = c ? c.classification.domain.map((d) => d.toLowerCase()) : [s.domain]

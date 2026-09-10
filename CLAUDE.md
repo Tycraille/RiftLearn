@@ -19,6 +19,7 @@ Static site, deployed to GitHub Pages from `main`.
 ```
 scripts/import.ts, merge.ts   data import and join (merge.ts is unit-tested)
 public/data/cards.json        generated — never edit by hand
+public/data/legends.json      generated per-legend card stats — never edit by hand (optional at runtime)
 src/data/                     Card types, JSON loading (CardsContext)
 src/db/schema.ts, repo.ts     Dexie schema; repo.ts is the only write path for progress data
 src/srs/scheduler.ts          ts-fsrs wrapper: schedule, preview, isDue, isMature
