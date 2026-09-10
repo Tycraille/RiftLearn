@@ -1,12 +1,12 @@
 /**
- * Point d'accès unique aux données de progression.
- * Toute l'UI passe par ici ; c'est aussi le point d'accroche d'une future synchro cloud.
+ * Single access point to the user's progress data.
+ * All UI code goes through this module; it is also where a future cloud sync would plug in.
  */
 import { db, DEFAULT_SETTINGS, type CardState, type CustomDeck, type ReviewLog, type Settings } from './schema'
 import { emptyState, localDay, schedule, stateId, type Grade } from '../srs/scheduler'
 import type { StudyMode } from '../study/modes'
 
-// ---- Réglages ---------------------------------------------------------------
+// ---- Settings ---------------------------------------------------------------
 
 export async function getSettings(): Promise<Settings> {
   const s = await db.settings.get('main')
@@ -19,7 +19,7 @@ export async function saveSettings(patch: Partial<Omit<Settings, 'id'>>): Promis
   return next
 }
 
-// ---- États SRS --------------------------------------------------------------
+// ---- SRS states ------------------------------------------------------------
 
 export async function getStatesForMode(mode: StudyMode): Promise<Map<string, CardState>> {
   const rows = await db.cardStates.where('mode').equals(mode).toArray()
@@ -39,7 +39,7 @@ export interface ReviewResult {
   after: CardState
 }
 
-/** Enregistre une réponse : met à jour l'état FSRS et journalise la révision. */
+/** Records an answer: updates the FSRS state and logs the review. */
 export async function review(
   cardId: string,
   mode: StudyMode,
@@ -65,9 +65,9 @@ export async function review(
 }
 
 export interface DayCounts {
-  /** cartes nouvelles introduites aujourd'hui (première révision) */
+  /** new cards introduced today (first review) */
   newCount: number
-  /** révisions de cartes déjà vues aujourd'hui */
+  /** reviews of already-seen cards today */
   reviewCount: number
 }
 
@@ -90,13 +90,13 @@ export async function getLogsForCard(cardId: string): Promise<ReviewLog[]> {
   return db.reviewLogs.where('cardId').equals(cardId).sortBy('reviewedAt')
 }
 
-/** Remet une carte à zéro pour un mode (ou tous). */
+/** Resets a card for one mode (or all modes). */
 export async function forgetCard(cardId: string, mode?: StudyMode): Promise<void> {
   if (mode) await db.cardStates.delete(stateId(cardId, mode))
   else await db.cardStates.where('cardId').equals(cardId).delete()
 }
 
-// ---- Paquets personnalisés --------------------------------------------------
+// ---- Custom decks -----------------------------------------------------------
 
 export async function listCustomDecks(): Promise<CustomDeck[]> {
   return db.customDecks.orderBy('createdAt').toArray()
@@ -152,7 +152,7 @@ export function parseExport(json: string): ExportFile {
   return data as ExportFile
 }
 
-/** Remplace toute la progression locale par le contenu du fichier. */
+/** Replaces all local progress with the file contents. */
 export async function importAll(file: ExportFile): Promise<void> {
   await db.transaction('rw', db.settings, db.cardStates, db.reviewLogs, db.customDecks, async () => {
     await Promise.all([db.settings.clear(), db.cardStates.clear(), db.reviewLogs.clear(), db.customDecks.clear()])

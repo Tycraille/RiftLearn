@@ -43,8 +43,8 @@ export function Study() {
   deckRef.current = deck
   const deckKey = deck?.id ?? null
 
-  // Construction de la file : une fois par paquet/mode (le paquet est lu via une ref
-  // pour ne pas relancer la session quand les compteurs se mettent à jour)
+  // Builds the queue once per deck/mode (the deck is read through a ref so that
+  // live counter updates do not restart the session)
   useEffect(() => {
     const d = deckRef.current
     if (!d || d.id !== deckKey) return
@@ -66,7 +66,7 @@ export function Study() {
   const current = queue?.[0] ?? null
   const pool = deck?.cards.length && deck.cards.length >= 8 ? deck.cards : allCards
 
-  // Nouvelle carte affichée : reset de l'état d'écran
+  // New card shown: reset the screen state
   useEffect(() => {
     setFlipped(false)
     setChosen(null)
@@ -85,7 +85,7 @@ export function Study() {
       setQueue((q) => {
         if (!q) return q
         const rest = q.slice(1)
-        // Carte en (ré)apprentissage : on la représente plus tard dans la session
+        // Card in (re)learning: show it again later in this session
         if ((after.state === 1 || after.state === 3) && after.due - Date.now() < 30 * 60_000) {
           const pos = Math.min(rest.length, g === Rating.Again ? 3 : 6)
           rest.splice(pos, 0, { card: current.card, state: after })
@@ -111,7 +111,7 @@ export function Study() {
     grade(correct ? (fast ? Rating.Easy : Rating.Good) : Rating.Again)
   }, [question, chosen, grade])
 
-  // Clavier
+  // Keyboard shortcuts
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return

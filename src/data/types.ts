@@ -32,9 +32,9 @@ export const SET_LABELS: Record<string, string> = {
 }
 
 export interface CardStats {
-  /** % de decks jouant au moins une copie */
+  /** % of decks running at least one copy */
   play: number
-  /** % de victoires des decks jouant la carte (null si < 50 parties) */
+  /** Match win rate of decks running the card (null when < 50 games) */
   win: number | null
   decks: number
   copies: number
@@ -42,7 +42,7 @@ export interface CardStats {
 }
 
 export interface Card {
-  /** riftbound_id, ex. "ogn-045-298" */
+  /** riftbound_id, e.g. "ogn-045-298" */
   id: string
   name: string
   slug: string
@@ -54,7 +54,7 @@ export interface Card {
   rarity: string | null
   energy: number | null
   might: number | null
-  /** nombre de runes de domaine requises (coût coloré) */
+  /** Number of domain runes required (colored cost) */
   power: number | null
   text: string | null
   textRich: string | null

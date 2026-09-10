@@ -49,13 +49,13 @@ export function toState(cardId: string, mode: StudyMode, c: FsrsCard): CardState
   }
 }
 
-/** Applique une note et renvoie le nouvel état. */
+/** Applies a grade and returns the new state. */
 export function schedule(s: CardState, grade: Grade, now = new Date()): CardState {
   const { card } = f.next(toFsrs(s), now, grade)
   return toState(s.cardId, s.mode, card)
 }
 
-/** Prochaine échéance pour chaque note, pour l'affichage sous les boutons. */
+/** Next due date for each grade, shown under the answer buttons. */
 export function preview(s: CardState, now = new Date()): Record<Grade, Date> {
   const p = f.repeat(toFsrs(s), now)
   return {
@@ -70,12 +70,12 @@ export function isDue(s: CardState, now = new Date()): boolean {
   return s.state !== 0 && s.due <= now.getTime()
 }
 
-/** "Maîtrisée" = en Review avec un intervalle ≥ 21 jours (convention Anki "mature"). */
+/** "Mature" = in Review with a scheduled interval ≥ 21 days (Anki convention). */
 export function isMature(s: CardState): boolean {
   return s.state === 2 && s.scheduled_days >= 21
 }
 
-/** Formatage court d'un intervalle : "10 min", "3 j", "2 mois" */
+/** Short interval formatting (French UI strings): "10 min", "3 j", "2 mois" */
 export function formatInterval(from: Date, to: Date): string {
   const ms = to.getTime() - from.getTime()
   const min = Math.round(ms / 60_000)

@@ -1,7 +1,7 @@
 import Dexie, { type EntityTable } from 'dexie'
 import type { StudyMode } from '../study/modes'
 
-/** Miroir de ts-fsrs `Card`, sérialisable (dates en ISO/number) */
+/** Mirror of ts-fsrs `Card`, serializable (dates as numbers) */
 export interface CardState {
   /** `${cardId}:${mode}` */
   id: string
@@ -26,12 +26,12 @@ export interface ReviewLog {
   mode: StudyMode
   /** 1 Again, 2 Hard, 3 Good, 4 Easy */
   rating: 1 | 2 | 3 | 4
-  /** état de la carte AVANT la révision */
+  /** card state BEFORE the review */
   stateBefore: 0 | 1 | 2 | 3
   reviewedAt: number
-  /** jour local YYYY-MM-DD, pour les agrégats */
+  /** local day YYYY-MM-DD, for aggregates */
   day: string
-  /** ms passées sur la carte */
+  /** ms spent on the card */
   elapsed: number
 }
 
@@ -44,7 +44,7 @@ export interface CustomDeck {
 
 export interface Settings {
   id: 'main'
-  /** seuil de taux de jeu (%) pour les paquets dérivés */
+  /** play-rate threshold (%) for derived decks */
   playRateThreshold: number
   dailyNewLimit: number
   dailyReviewLimit: number

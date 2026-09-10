@@ -11,7 +11,7 @@ const CardsCtx = createContext<CardsValue | null>(null)
 
 export async function loadCardsFile(): Promise<CardsFile> {
   const res = await fetch(`${import.meta.env.BASE_URL}data/cards.json`)
-  if (!res.ok) throw new Error(`Impossible de charger cards.json (${res.status})`)
+  if (!res.ok) throw new Error(`Failed to load cards.json (${res.status})`)
   return res.json()
 }
 
@@ -35,6 +35,6 @@ export function CardsProvider({ children, fallback }: { children: ReactNode; fal
 
 export function useCards(): CardsValue {
   const v = useContext(CardsCtx)
-  if (!v) throw new Error('useCards doit être utilisé sous CardsProvider')
+  if (!v) throw new Error('useCards must be used within CardsProvider')
   return v
 }

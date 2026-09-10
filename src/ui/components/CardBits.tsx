@@ -1,7 +1,7 @@
 import { useState, type CSSProperties } from 'react'
 import { DOMAIN_INFO, type Card, type Domain } from '../../data/types'
 
-// ---- Icônes de coût ---------------------------------------------------------
+// ---- Cost icons -------------------------------------------------------------
 
 export function EnergyPip({ n, size = 'md' }: { n: number | string; size?: 'sm' | 'md' | 'lg' }) {
   const cls = size === 'lg' ? 'h-9 w-9 text-lg' : size === 'sm' ? 'h-4 w-4 text-[10px]' : 'h-6 w-6 text-xs'
@@ -48,7 +48,7 @@ export function DomainBadge({ domain, small }: { domain: string; small?: boolean
   )
 }
 
-/** Coût complet : énergie + runes de domaine. */
+/** Full cost: energy + domain runes. */
 export function Cost({ card, size = 'md' }: { card: Card; size?: 'sm' | 'md' | 'lg' }) {
   if (card.energy == null && !card.power) return <span className="text-muted text-sm">—</span>
   const runes: string[] = []
@@ -66,11 +66,11 @@ export function Cost({ card, size = 'md' }: { card: Card; size?: 'sm' | 'md' | '
   )
 }
 
-// ---- Texte de carte avec jetons ---------------------------------------------
+// ---- Card text with tokens --------------------------------------------------
 
 const TOKEN = /(:rb_[a-z0-9_]+:|\[[A-Za-z ]+\]|\[>\])/g
 
-/** Découpe en lignes : depuis le HTML (<br />, <p>) si disponible, sinon heuristique sur le texte brut. */
+/** Splits into lines: from HTML (<br />, <p>) when available, otherwise a heuristic on plain text. */
 export function textLines(text: string): string[] {
   const src = text.includes('<')
     ? text
@@ -128,8 +128,8 @@ export function CardText({ text, className = '' }: { text: string | null; classN
 // ---- Image ------------------------------------------------------------------
 
 export function CardImage({ card, className = '', hideName = false }: { card: Card; className?: string; hideName?: boolean }) {
-  // L'URL est dérivée de la carte courante ; on ne mémorise que l'id dont le CDN a échoué,
-  // sinon l'image resterait figée sur la première carte quand la prop change.
+  // The URL is derived from the current card; we only remember which card id failed on the CDN,
+  // otherwise the image would stay stuck on the first card when the prop changes.
   const [failedId, setFailedId] = useState<string | null>(null)
   const src = failedId === card.id ? card.imageFallback : card.imageUrl
   return (
@@ -144,8 +144,8 @@ export function CardImage({ card, className = '', hideName = false }: { card: Ca
       />
       {hideName && (
         <>
-          {/* Mise en page Riftbound : coût en haut à gauche, puissance en haut à droite,
-              bandeau type + nom vers 52-64 % de hauteur, texte et flavour en dessous. */}
+          {/* Riftbound layout: cost top-left, might top-right,
+              type + name banner around 52-64% of the height, rules text and flavour below. */}
           <div className="absolute left-0 top-0 h-[23%] w-[21%] bg-bg/95 backdrop-blur-md" />
           <div className="absolute right-0 top-0 h-[15%] w-[30%] bg-bg/95 backdrop-blur-md" />
           <div className="absolute inset-x-0 bottom-0 h-[49%] bg-bg/95 backdrop-blur-md" />
@@ -155,7 +155,7 @@ export function CardImage({ card, className = '', hideName = false }: { card: Ca
   )
 }
 
-// ---- Stats méta -------------------------------------------------------------
+// ---- Meta stats -------------------------------------------------------------
 
 export function MetaStats({ card, compact }: { card: Card; compact?: boolean }) {
   const s = card.stats
@@ -177,7 +177,7 @@ export function MetaStats({ card, compact }: { card: Card; compact?: boolean }) 
   )
 }
 
-/** Verso complet d'une fiche. */
+/** Full back side of a flashcard. */
 export function CardBack({ card, showImage = true }: { card: Card; showImage?: boolean }) {
   return (
     <div className="space-y-3">

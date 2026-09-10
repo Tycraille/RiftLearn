@@ -18,15 +18,15 @@ const codex = (over: Partial<CodexCard> & { riftbound_id: string; name: string }
 })
 
 describe('merge', () => {
-  it('extrait une variable JS inline', () => {
+  it('extracts an inline JS variable', () => {
     expect(extractInlineVar<number[]>('foo\n  var DATA = [1,2];\n  var X = 1;\n', 'DATA')).toEqual([1, 2])
   })
-  it('normalise les identifiants et les noms', () => {
+  it('normalizes ids and names', () => {
     expect(riftboundIdFromImg('/img/cards/riftbound/UNL/unl-150a-219_cropped.png')).toBe('unl-150a-219')
     expect(normalizeName('Vi - Piltover Enforcer (Signature)')).toBe('vi, piltover enforcer')
     expect(decodeEntities('[&gt;] &quot;x&quot;')).toBe('[>] "x"')
   })
-  it('joint par id, par id sans suffixe de variante, puis par nom ; ignore les variantes', () => {
+  it('joins by id, then by id without variant suffix, then by name; skips variants', () => {
     const cards = [
       codex({ riftbound_id: 'ogn-045-298', name: 'Defy' }),
       codex({ riftbound_id: 'unl-150-219', name: 'Vex - Apathetic' }),

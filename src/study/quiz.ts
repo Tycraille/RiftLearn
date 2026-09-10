@@ -5,11 +5,11 @@ export type QuizKind = 'energy' | 'domain' | 'name-from-text' | 'name-from-image
 export interface QuizQuestion {
   kind: QuizKind
   card: Card
-  /** énoncé (texte) */
+  /** prompt text */
   prompt: string
-  /** image à afficher comme énoncé */
+  /** image shown as the prompt */
   image?: string
-  /** texte d'effet à afficher comme énoncé */
+  /** rules text shown as the prompt */
   text?: string
   options: string[]
   answerIndex: number
@@ -39,7 +39,7 @@ function pickDistinct<T>(pool: T[], n: number, rng: Rng, key: (t: T) => string, 
   return out
 }
 
-/** Distracteurs : même type et domaine, coût proche ; puis même type ; puis n'importe quoi. */
+/** Distractors: same type and domain with a close cost; then same type; then anything. */
 function distractorCards(card: Card, pool: Card[], n: number, rng: Rng): Card[] {
   const others = pool.filter((c) => c.id !== card.id)
   const tiers = [

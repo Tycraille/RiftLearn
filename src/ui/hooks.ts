@@ -10,7 +10,7 @@ export function useSettings(): Settings {
   return useMemo(() => ({ ...DEFAULT_SETTINGS, ...s, id: 'main' as const }), [s])
 }
 
-/** Map cardId -> état pour un mode (réactif). */
+/** Map cardId -> state for a mode (live). */
 export function useStates(mode: StudyMode): Map<string, CardState> {
   const rows = useLiveQuery(() => db.cardStates.where('mode').equals(mode).toArray(), [mode])
   return useMemo(() => new Map((rows ?? []).map((r) => [r.cardId, r])), [rows])

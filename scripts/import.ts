@@ -1,12 +1,12 @@
 /**
- * Import des données de cartes Riftbound.
+ * Imports Riftbound card data.
  *
- *  1. Stats méta   : https://riftdecks.com/cards/stats  (tableau `var DATA = [...]` embarqué dans la page)
- *  2. Fiches       : https://api.riftcodex.com/cards    (API JSON ouverte, paginée)
- *  3. Jointure sur riftbound_id (ex. "ogn-045-298") == basename de l'image riftdecks
- *  4. Écriture de public/data/cards.json
+ *  1. Meta stats   : https://riftdecks.com/cards/stats  (`var DATA = [...]` array embedded in the page)
+ *  2. Card details : https://api.riftcodex.com/cards    (open, paginated JSON API)
+ *  3. Join on riftbound_id (e.g. "ogn-045-298") == basename of the riftdecks image
+ *  4. Write public/data/cards.json
  *
- * Usage : npm run import
+ * Usage: npm run import
  */
 import { writeFile, mkdir } from 'node:fs/promises'
 import path from 'node:path'
@@ -29,7 +29,7 @@ async function fetchStatsHtml(): Promise<string> {
     headers: { 'User-Agent': UA, Accept: 'text/html', 'Accept-Language': 'en-US,en;q=0.9' },
   })
   if (res.ok) return res.text()
-  console.warn(`riftdecks a répondu ${res.status}, repli sur Playwright (chromium headless)…`)
+  console.warn(`riftdecks answered ${res.status}, falling back to Playwright (headless Chromium)…`)
   return fetchStatsHtmlWithPlaywright()
 }
 
@@ -39,8 +39,8 @@ async function fetchStatsHtmlWithPlaywright(): Promise<string> {
     pw = await import('playwright')
   } catch {
     throw new Error(
-      "Cloudflare bloque le fetch direct et Playwright n'est pas installé.\n" +
-        'Lance : npm i -D playwright && npx playwright install chromium, puis relance npm run import.',
+      'Cloudflare blocks the direct fetch and Playwright is not installed.\n' +
+        'Run: npm i -D playwright && npx playwright install chromium, then run npm run import again.',
     )
   }
   const browser = await pw.chromium.launch({ headless: true })
@@ -80,16 +80,16 @@ async function fetchAllCodexCards(): Promise<CodexCard[]> {
 // ---- Main -------------------------------------------------------------------
 
 async function main() {
-  console.log('1/3  Stats riftdecks…')
+  console.log('1/3  riftdecks stats…')
   const html = await fetchStatsHtml()
   const stats = extractInlineVar<RiftdecksStat[]>(html, 'DATA')
   const totals = extractInlineVar<RiftdecksTotals>(html, 'TOTALS')
-  console.log(`     ${stats.length} cartes, ${totals.total_decks} decks analysés`)
+  console.log(`     ${stats.length} cards, ${totals.total_decks} decks analyzed`)
 
-  console.log('2/3  Fiches Riftcodex…')
+  console.log('2/3  Riftcodex card details…')
   const codex = await fetchAllCodexCards()
 
-  console.log('3/3  Jointure et écriture…')
+  console.log('3/3  Join and write…')
   const { cards, unmatched } = merge(stats, codex)
   const out = {
     generatedAt: new Date().toISOString(),
@@ -101,8 +101,8 @@ async function main() {
   await writeFile(OUT, JSON.stringify(out), 'utf8')
 
   const pct = ((unmatched.length / stats.length) * 100).toFixed(1)
-  console.log(`     ${cards.length} cartes écrites dans ${path.relative(process.cwd(), OUT)}`)
-  console.log(`     ${unmatched.length} sans fiche Riftcodex (${pct} %)`)
+  console.log(`     ${cards.length} cards written to ${path.relative(process.cwd(), OUT)}`)
+  console.log(`     ${unmatched.length} without Riftcodex details (${pct}%)`)
   if (unmatched.length) console.log('     ' + unmatched.slice(0, 20).join('\n     '))
 }
 

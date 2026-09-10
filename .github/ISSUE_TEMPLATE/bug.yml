@@ -1,0 +1,64 @@
+name: Bug report
+description: Something does not behave as expected
+labels: [bug]
+body:
+  - type: dropdown
+    id: screen
+    attributes:
+      label: Screen
+      options:
+        - Study session (image)
+        - Study session (name)
+        - Study session (quiz)
+        - Decks
+        - Cards / card detail
+        - Dashboard
+        - Settings
+        - Data import script
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: blocker = cannot use the feature · major = wrong behavior with no workaround · minor = wrong behavior with a workaround · cosmetic = visual only
+      options:
+        - blocker
+        - major
+        - minor
+        - cosmetic
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open #/decks, mode Image
+        2. Click "Réviser" on the Calm deck
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: Chrome 130, 375×812 mobile viewport, commit d7d788c
+  - type: input
+    id: file
+    attributes:
+      label: Suspected file (optional)
+      placeholder: src/ui/pages/Study.tsx

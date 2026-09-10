@@ -8,7 +8,7 @@ const mk = (id: string, name: string): Card =>
 const cards = [mk('a', 'Defy'), mk('b', 'Vi, Peacekeeper'), mk('c', "Zhonya's Hourglass")]
 
 describe('parseDecklist', () => {
-  it('reconnaît les formats de quantité', () => {
+  it('recognizes quantity formats', () => {
     const r = parseDecklist('3 Defy\n2x Vi - Peacekeeper\nZhonya’s Hourglass x1\nDefy (1)', cards)
     expect(r.missing).toEqual([])
     expect(r.found.map((f) => [f.card.id, f.count])).toEqual([
@@ -18,7 +18,7 @@ describe('parseDecklist', () => {
     ])
   })
 
-  it('ignore en-têtes, commentaires et lignes vides, liste les inconnues', () => {
+  it('ignores headers, comments and blank lines, lists unknown cards', () => {
     const r = parseDecklist('# mon deck\nMain deck\n\n3 Defy\n1 Carte Inconnue\nBattlefields', cards)
     expect(r.found).toHaveLength(1)
     expect(r.missing).toEqual(['Carte Inconnue'])

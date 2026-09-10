@@ -2,7 +2,7 @@ import path from 'node:path'
 
 export const RIFTDECKS_ORIGIN = 'https://riftdecks.com'
 
-// ---- Types source -----------------------------------------------------------
+// ---- Source types -----------------------------------------------------------
 
 export interface RiftdecksStat {
   name: string
@@ -43,7 +43,7 @@ export interface CodexCard {
   metadata: { clean_name: string; alternate_art: boolean; overnumbered: boolean; signature: boolean }
 }
 
-// ---- Type cible (miroir de src/data/types.ts) -------------------------------
+// ---- Target type (mirror of src/data/types.ts) -------------------------------
 
 export interface Card {
   id: string
@@ -72,7 +72,7 @@ export interface Card {
 export function extractInlineVar<T>(html: string, name: string): T {
   const re = new RegExp(`var ${name} = (.*?);\\s*\\n`, 's')
   const m = html.match(re)
-  if (!m) throw new Error(`Variable ${name} introuvable dans la page`)
+  if (!m) throw new Error(`Variable ${name} not found in the page`)
   return JSON.parse(m[1]) as T
 }
 
@@ -87,9 +87,9 @@ function isBaseCard(c: CodexCard): boolean {
   )
 }
 
-// ---- Jointure ---------------------------------------------------------------
+// ---- Join ---------------------------------------------------------------
 
-/** "Vi - Piltover Enforcer (Signature)" et "Vi, Piltover Enforcer" -> "vi, piltover enforcer" */
+/** "Vi - Piltover Enforcer (Signature)" and "Vi, Piltover Enforcer" -> "vi, piltover enforcer" */
 export function normalizeName(name: string): string {
   return name
     .toLowerCase()
@@ -98,7 +98,7 @@ export function normalizeName(name: string): string {
     .trim()
 }
 
-/** Riftcodex renvoie parfois des entités HTML dans le texte brut ("[&gt;]", "&quot;"). */
+/** Riftcodex sometimes returns HTML entities in plain text ("[&gt;]", "&quot;"). */
 export function decodeEntities(s: string | null): string | null {
   if (s == null) return s
   return s
@@ -128,7 +128,7 @@ export function merge(stats: RiftdecksStat[], codex: CodexCard[]): { cards: Card
   const unmatched: string[] = []
   for (const s of stats) {
     const rawId = riftboundIdFromImg(s.img)
-    // "unl-150a-219" (variante affichée par riftdecks) -> "unl-150-219"
+    // "unl-150a-219" (variant shown by riftdecks) -> "unl-150-219"
     const id = rawId.replace(/^([a-z]+-\d+)[a-z]+(-\d+)$/, '$1$2')
     const c = byId.get(id) ?? byId.get(rawId) ?? byName.get(normalizeName(s.name))
     if (!c) unmatched.push(`${s.name} (${id})`)

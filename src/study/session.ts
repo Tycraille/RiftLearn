@@ -4,9 +4,9 @@ import type { DayCounts } from '../db/repo'
 import { isDue } from '../srs/scheduler'
 
 export interface Queue {
-  /** cartes dues (déjà vues), les plus en retard d'abord */
+  /** due cards (already seen), most overdue first */
   due: Card[]
-  /** nouvelles cartes, les plus jouées d'abord, limitées par le quota journalier */
+  /** new cards, most played first, capped by the daily quota */
   fresh: Card[]
 }
 
@@ -39,7 +39,7 @@ export function buildQueue(
   return { due: due.slice(0, reviewBudget).map((d) => d.card), fresh: fresh.slice(0, newBudget) }
 }
 
-/** Interleave : une nouvelle carte toutes les `every` cartes dues. */
+/** Interleaves one new card every `every` due cards. */
 export function interleave(q: Queue, every = 3): Card[] {
   const out: Card[] = []
   const due = [...q.due]

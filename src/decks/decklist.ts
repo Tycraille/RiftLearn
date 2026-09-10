@@ -20,9 +20,9 @@ export function normalizeName(name: string): string {
 const HEADER = /^(main ?deck|deck|legend|champion|battlefields?|runes?|sideboard|side|units?|spells?|gear|total)\b/i
 
 /**
- * Formats reconnus par ligne :
+ * Recognized line formats:
  *   3 Defy · 3x Defy · x3 Defy · Defy x3 · Defy ×3 · Defy (3) · Defy
- * Les lignes vides, commentaires (# ou //) et en-têtes de section sont ignorés.
+ * Blank lines, comments (# or //) and section headers are ignored.
  */
 export function parseDecklist(text: string, cards: Card[]): ParsedDecklist {
   const index = new Map<string, Card>()

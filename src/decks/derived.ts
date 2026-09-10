@@ -13,7 +13,7 @@ export interface Deck {
   customId?: number
 }
 
-/** Cartes retenues par le seuil de taux de jeu, triées par popularité. */
+/** Cards above the play-rate threshold, sorted by popularity. */
 export function metaCards(cards: Card[], threshold: number): Card[] {
   return cards.filter((c) => c.stats.play >= threshold)
 }

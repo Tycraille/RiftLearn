@@ -1,0 +1,25 @@
+# Runs lint, tests and build on pull requests and on fix/feat branches.
+# This is the required check before merging into main.
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches:
+      - 'fix/**'
+      - 'feat/**'
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build

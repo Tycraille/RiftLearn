@@ -21,7 +21,7 @@ const pool = [
 ]
 
 describe('quiz', () => {
-  it('produit 4 options distinctes contenant la bonne réponse, pour chaque type de question', () => {
+  it('produces 4 distinct options including the right answer, for every question kind', () => {
     const kinds: QuizKind[] = ['energy', 'domain', 'name-from-text', 'name-from-image']
     for (const kind of kinds) {
       const q = makeQuestion(pool[0], pool, rng, kind)
@@ -32,13 +32,13 @@ describe('quiz', () => {
     }
   })
 
-  it('un champ de bataille sans coût ni texte ne propose que la question image', () => {
+  it('a battlefield with no cost and no text only offers the image question', () => {
     expect(availableKinds(pool[5])).toEqual(['name-from-image', 'domain'])
     const q = makeQuestion(pool[5], pool, rng, 'energy')
     expect(['name-from-image', 'domain']).toContain(q.kind)
   })
 
-  it('préfère les distracteurs du même type et domaine', () => {
+  it('prefers distractors of the same type and domain', () => {
     const q = makeQuestion(pool[0], pool, rng, 'name-from-text')
     expect(q.options).not.toContain('Scuttle Crab')
     expect(q.options).not.toContain('Star Spring')

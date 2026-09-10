@@ -1,68 +1,80 @@
 # RiftLearn
 
-Application web (PC et smartphone) pour apprendre et réviser les cartes les plus jouées de **Riftbound TCG**, à la manière d'Anki : fiches recto/verso, répétition espacée (FSRS), quiz, tableau de bord de progression.
+Web app (desktop and mobile browsers) to learn and review the most played **Riftbound TCG** cards, Anki-style: front/back flashcards, spaced repetition (FSRS), quizzes, and a progress dashboard.
 
-## Fonctionnalités
+## Features
 
-- **Trois modes de révision** : Image → nom + effet, Nom → effet + coût, Quiz à choix multiples. Chaque mode a sa propre progression par carte.
-- **Répétition espacée** avec l'algorithme FSRS (`ts-fsrs`), notation Encore / Difficile / Bien / Facile, intervalles prévisionnels affichés.
-- **Paquets automatiques** : toutes les cartes méta, par domaine, par type, par set. Le seuil de taux de jeu est réglable.
-- **Paquets personnalisés** : import d'une decklist (texte collé) ou ajout carte par carte depuis sa fiche.
-- **Contexte méta** au verso : taux de jeu, taux de victoire, copies moyennes, nombre de decks.
-- **Tableau de bord** : cartes dues par mode, série de jours, heatmap 12 semaines, progression par domaine et type.
-- **Progression locale** (IndexedDB) avec export / import JSON pour changer d'appareil.
-- Raccourcis clavier sur PC : `Espace` retourner, `1`–`4` noter, `Échap` quitter.
+- **Three study modes**: Image → name + effect, Name → effect + cost, Multiple-choice quiz. Each mode tracks its own progress per card.
+- **Spaced repetition** with the FSRS algorithm (`ts-fsrs`), Again / Hard / Good / Easy grading with predicted intervals.
+- **Automatic decks**: all meta cards, per domain, per type, per set. The play-rate threshold is adjustable.
+- **Custom decks**: paste a decklist, or add cards one by one from their detail page.
+- **Meta context** on the back of each card: play rate, win rate, average copies, number of decks.
+- **Dashboard**: due cards per mode, day streak, 12-week heatmap, progress per domain and type.
+- **Local progress** (IndexedDB) with JSON export / import to move between devices.
+- Keyboard shortcuts on desktop: `Space` flip, `1`–`4` grade, `Esc` leave the session.
 
-## Démarrer
+The UI is currently in French; a bilingual FR/EN interface is planned. Card names and rules text are always in English.
+
+## Getting started
 
 ```bash
 npm install
 npm run dev
 ```
 
-Puis ouvrir http://localhost:5173.
+Then open http://localhost:5173. The dev server listens on all interfaces, so a phone on the same Wi-Fi can open `http://<your-pc-ip>:5173`.
 
-## Mettre à jour les données de cartes
+## Refreshing card data
 
 ```bash
 npm run import
 ```
 
-Le script `scripts/import.ts` :
+The `scripts/import.ts` script:
 
-1. lit les stats méta embarquées dans la page https://riftdecks.com/cards/stats (`var DATA = [...]`) ; la page est protégée par Cloudflare, le script bascule automatiquement sur Playwright (Chromium headless) si le fetch direct est refusé ;
-2. récupère les fiches complètes (coût, texte, image, rareté) via l'API ouverte https://api.riftcodex.com ;
-3. joint les deux sources sur l'identifiant `riftbound_id` (ex. `ogn-045-298`) et écrit `public/data/cards.json`.
+1. reads the meta stats embedded in https://riftdecks.com/cards/stats (`var DATA = [...]`); the page sits behind Cloudflare, so the script falls back to Playwright (headless Chromium) when the direct fetch is refused;
+2. fetches full card details (cost, rules text, image, rarity) from the open https://api.riftcodex.com API;
+3. joins both sources on the `riftbound_id` (e.g. `ogn-045-298`) and writes `public/data/cards.json`.
 
-Première utilisation du repli Playwright :
+First use of the Playwright fallback:
 
 ```bash
 npx playwright install chromium
 ```
 
-## Tests et build
+## Tests and build
 
 ```bash
 npm test
 npm run build
+npm run lint
 ```
 
-## Déploiement
+## Deployment
 
-Un workflow GitHub Actions (`.github/workflows/deploy.yml`) construit et publie l'app sur GitHub Pages à chaque push sur `main` (activer *Settings → Pages → Source : GitHub Actions* dans le dépôt). Le routage utilise un `HashRouter`, ce qui fonctionne sur n'importe quel hébergement statique (Vercel, Netlify…).
+A GitHub Actions workflow (`.github/workflows/deploy.yml`) builds and publishes the app to GitHub Pages on every push to `main` (enable *Settings → Pages → Source: GitHub Actions* in the repository). Routing uses a `HashRouter`, so the build works on any static host (Vercel, Netlify, …).
 
-## Structure
+## Contributing workflow
 
-```
-scripts/import.ts      import des données (riftdecks + Riftcodex)
-scripts/merge.ts       jointure et normalisation (testé)
-public/data/cards.json données générées
-src/data/              types et chargement du JSON
-src/db/                Dexie (IndexedDB) : états SRS, journal, paquets, réglages
-src/srs/               wrapper ts-fsrs
-src/study/             modes, file de session, générateur de QCM
-src/decks/             paquets dérivés et parseur de decklist
-src/ui/                pages et composants React
+Issues are filed on GitHub (bug and enhancement templates). Each issue is worked on in its own branch (`fix/<n>-<slug>` or `feat/<n>-<slug>`) from a dedicated git worktree, and lands through a pull request that must pass the CI workflow. See `CLAUDE.md` for the conventions, and the helper scripts:
+
+```powershell
+.\scripts\new-fix.ps1 -Issue 12    # create worktree + branch for issue #12
+.\scripts\done-fix.ps1 -Issue 12   # clean up after the PR is merged
 ```
 
-Sources de données : [riftdecks.com](https://riftdecks.com) (stats de tournoi) et [riftcodex.com](https://riftcodex.com) (base de cartes). Projet de fan, non affilié à Riot Games.
+## Project layout
+
+```
+scripts/import.ts      data import (riftdecks + Riftcodex)
+scripts/merge.ts       join and normalization (unit-tested)
+public/data/cards.json generated data — never edit by hand
+src/data/              types and JSON loading
+src/db/                Dexie (IndexedDB): SRS states, review log, decks, settings
+src/srs/               ts-fsrs wrapper
+src/study/             modes, session queue, quiz generator
+src/decks/             derived decks and decklist parser
+src/ui/                React pages and components
+```
+
+Data sources: [riftdecks.com](https://riftdecks.com) (tournament stats) and [riftcodex.com](https://riftcodex.com) (card database). Fan project, not affiliated with Riot Games.
