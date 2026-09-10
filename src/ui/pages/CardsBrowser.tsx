@@ -99,7 +99,7 @@ export function CardsBrowser() {
             <option value="">{t('cards.allTypes')}</option>
             {CARD_TYPES.map((ct) => (
               <option key={ct} value={ct}>
-                {ct}
+                {t(`type.${ct}`)}
               </option>
             ))}
           </select>
