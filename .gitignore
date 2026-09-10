@@ -23,3 +23,16 @@ dist-ssr
 *.sln
 *.sw?
 public/data/.cache
+
+# Secrets et configuration locale (jamais versionnés)
+.env
+.env.*
+!.env.example
+.claude/settings.local.json
+.claude/*.local.*
+
+# Exports de progression RiftLearn (données personnelles)
+riftlearn-*.json
+
+# Navigateurs Playwright téléchargés localement
+.playwright/
