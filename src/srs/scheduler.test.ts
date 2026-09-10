@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { getI18n } from '../i18n'
 import { emptyState, formatInterval, isDue, preview, Rating, schedule } from './scheduler'
 
 const now = new Date('2026-09-10T10:00:00')
@@ -32,8 +33,18 @@ describe('scheduler', () => {
   })
 
   it('formatInterval', () => {
-    expect(formatInterval(now, new Date(now.getTime() + 10 * 60_000))).toBe('10 min')
-    expect(formatInterval(now, new Date(now.getTime() + 3 * 86_400_000))).toBe('3 j')
-    expect(formatInterval(now, new Date(now.getTime() + 65 * 86_400_000))).toBe('2 mois')
+    const fr = getI18n('fr').t
+    const en = getI18n('en').t
+    const after = (ms: number) => new Date(now.getTime() + ms)
+    expect(formatInterval(now, after(20_000), fr)).toBe('< 1 min')
+    expect(formatInterval(now, after(10 * 60_000), fr)).toBe('10 min')
+    expect(formatInterval(now, after(3 * 86_400_000), fr)).toBe('3 j')
+    expect(formatInterval(now, after(3 * 86_400_000), en)).toBe('3 d')
+    expect(formatInterval(now, after(65 * 86_400_000), fr)).toBe('2 mois')
+    expect(formatInterval(now, after(65 * 86_400_000), en)).toBe('2 mo')
+    expect(formatInterval(now, after(365 * 86_400_000), fr)).toBe('1 an')
+    expect(formatInterval(now, after(548 * 86_400_000), fr)).toBe('1,5 an')
+    expect(formatInterval(now, after(730 * 86_400_000), fr)).toBe('2 ans')
+    expect(formatInterval(now, after(548 * 86_400_000), en)).toBe('1.5 y')
   })
 })

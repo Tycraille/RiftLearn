@@ -4,17 +4,12 @@ import { useCards } from '../../data/CardsContext'
 import { createCustomDeck, deleteCustomDeck } from '../../db/repo'
 import { parseDecklist } from '../../decks/decklist'
 import type { Deck, DeckKind } from '../../decks/derived'
-import { MODE_INFO, STUDY_MODES, type StudyMode } from '../../study/modes'
+import { useT } from '../../i18n/I18nContext'
+import { STUDY_MODES, type StudyMode } from '../../study/modes'
 import { deckCounts } from '../../study/session'
 import { useDecks, useSettings, useStates } from '../hooks'
 
-const SECTIONS: { kind: DeckKind; title: string }[] = [
-  { kind: 'all', title: 'Méta' },
-  { kind: 'custom', title: 'Mes paquets' },
-  { kind: 'domain', title: 'Par domaine' },
-  { kind: 'type', title: 'Par type' },
-  { kind: 'set', title: 'Par set' },
-]
+const SECTIONS: DeckKind[] = ['all', 'custom', 'domain', 'type', 'set']
 
 export function useStudyMode(): [StudyMode, (m: StudyMode) => void] {
   const settings = useSettings()
@@ -42,6 +37,7 @@ export function useStudyMode(): [StudyMode, (m: StudyMode) => void] {
 }
 
 export function ModeTabs({ mode, onChange }: { mode: StudyMode; onChange: (m: StudyMode) => void }) {
+  const { t } = useT()
   const settings = useSettings()
   return (
     <div className="inline-flex rounded-lg bg-panel-2 p-1">
@@ -50,9 +46,9 @@ export function ModeTabs({ mode, onChange }: { mode: StudyMode; onChange: (m: St
           key={m}
           onClick={() => onChange(m)}
           className={`rounded-md px-3 py-1.5 text-sm ${mode === m ? 'bg-accent text-bg font-semibold' : 'text-muted hover:text-ink'}`}
-          title={MODE_INFO[m].label}
+          title={t(`mode.${m}.label`)}
         >
-          {MODE_INFO[m].short}
+          {t(`mode.${m}.short`)}
         </button>
       ))}
     </div>
@@ -60,6 +56,7 @@ export function ModeTabs({ mode, onChange }: { mode: StudyMode; onChange: (m: St
 }
 
 export function Decks() {
+  const { t } = useT()
   const decks = useDecks()
   const settings = useSettings()
   const [mode, setMode] = useStudyMode()
@@ -70,31 +67,30 @@ export function Decks() {
     <div className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Paquets</h1>
+          <h1 className="text-2xl font-bold">{t('nav.decks')}</h1>
           <p className="text-sm text-muted">
-            Cartes jouées dans ≥ {settings.playRateThreshold} % des decks · <Link to="/settings" className="underline">changer le seuil</Link>
+            {t('decks.subtitle', { threshold: settings.playRateThreshold })} ·{' '}
+            <Link to="/settings" className="underline">{t('decks.changeThreshold')}</Link>
           </p>
         </div>
         <ModeTabs mode={mode} onChange={setMode} />
       </header>
 
-      {SECTIONS.map(({ kind, title }) => {
+      {SECTIONS.map((kind) => {
         const list = decks.filter((d) => d.kind === kind)
         if (!list.length && kind !== 'custom') return null
         return (
           <section key={kind} className="space-y-2">
             <div className="flex items-center justify-between">
-              <h2 className="label">{title}</h2>
+              <h2 className="label">{t(`decks.section.${kind}`)}</h2>
               {kind === 'custom' && (
                 <button className="btn-ghost text-sm" onClick={() => setCreating((v) => !v)}>
-                  {creating ? 'Fermer' : '+ Nouveau paquet'}
+                  {creating ? t('common.close') : t('decks.newDeck')}
                 </button>
               )}
             </div>
             {kind === 'custom' && creating && <NewDeckForm onDone={() => setCreating(false)} />}
-            {kind === 'custom' && !list.length && !creating && (
-              <p className="text-sm text-muted">Aucun paquet personnalisé. Importe une decklist ou ajoute des cartes depuis leur fiche.</p>
-            )}
+            {kind === 'custom' && !list.length && !creating && <p className="text-sm text-muted">{t('decks.noCustom')}</p>}
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {list.map((d) => (
                 <DeckTile key={d.id} deck={d} mode={mode} states={states} />
@@ -108,6 +104,7 @@ export function Decks() {
 }
 
 function DeckTile({ deck, mode, states }: { deck: Deck; mode: StudyMode; states: ReturnType<typeof useStates> }) {
+  const { t } = useT()
   const c = useMemo(() => deckCounts(deck.cards, states), [deck.cards, states])
   const pct = c.total ? Math.round(((c.total - c.fresh) / c.total) * 100) : 0
   return (
@@ -117,35 +114,36 @@ function DeckTile({ deck, mode, states }: { deck: Deck; mode: StudyMode; states:
           {deck.color && <span className="h-3 w-3 rounded-full" style={{ background: deck.color }} />}
           <div className="font-semibold">{deck.label}</div>
         </div>
-        <span className="text-xs text-muted">{c.total} cartes</span>
+        <span className="text-xs text-muted">{t('common.cards', { n: c.total })}</span>
       </div>
       <div className="h-1.5 overflow-hidden rounded bg-panel-2">
         <div className="h-full bg-accent" style={{ width: `${pct}%` }} />
       </div>
       <div className="flex items-center justify-between text-xs">
         <div className="flex gap-3">
-          <span className="text-again">{c.due} dues</span>
-          <span className="text-accent">{c.fresh} nouvelles</span>
-          <span className="text-good">{c.mature} maîtrisées</span>
+          <span className="text-again">{t('decks.due', { n: c.due })}</span>
+          <span className="text-accent">{t('decks.new', { n: c.fresh })}</span>
+          <span className="text-good">{t('decks.mature', { n: c.mature })}</span>
         </div>
         {deck.kind === 'custom' && deck.customId != null && (
           <button
             className="text-muted hover:text-again"
-            onClick={() => confirm(`Supprimer le paquet « ${deck.label} » ?`) && deleteCustomDeck(deck.customId!)}
-            title="Supprimer"
+            onClick={() => confirm(t('decks.confirmDelete', { name: deck.label })) && deleteCustomDeck(deck.customId!)}
+            title={t('common.delete')}
           >
             ✕
           </button>
         )}
       </div>
       <Link to={`/study/${encodeURIComponent(deck.id)}?mode=${mode}`} className={`${c.due + c.fresh ? 'btn-primary' : 'btn-ghost'} mt-1 text-sm`}>
-        Réviser
+        {t('decks.study')}
       </Link>
     </div>
   )
 }
 
 function NewDeckForm({ onDone }: { onDone: () => void }) {
+  const { t } = useT()
   const { cards } = useCards()
   const [name, setName] = useState('')
   const [text, setText] = useState('')
@@ -155,18 +153,24 @@ function NewDeckForm({ onDone }: { onDone: () => void }) {
   return (
     <div className="panel space-y-3 p-4">
       <div>
-        <label className="label">Nom du paquet</label>
-        <input className="input mt-1" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex. Deck Akali Vendetta" />
+        <label className="label">{t('decks.form.name')}</label>
+        <input className="input mt-1" value={name} onChange={(e) => setName(e.target.value)} placeholder={t('decks.form.namePlaceholder')} />
       </div>
       <div>
-        <label className="label">Decklist (une carte par ligne : « 3 Defy », « Defy x3 »…)</label>
+        <label className="label">{t('decks.form.decklist')}</label>
         <textarea className="input mt-1 h-40 font-mono text-sm" value={text} onChange={(e) => setText(e.target.value)} placeholder={'3 Defy\n2 Star-Crossed\n1 Zhonya\'s Hourglass'} />
       </div>
       {parsed && (
         <div className="text-sm">
-          <span className="text-good">{parsed.found.length} cartes reconnues</span>
+          <span className="text-good">{t('decks.form.recognized', { n: parsed.found.length })}</span>
           {parsed.missing.length > 0 && (
-            <span className="text-again"> · {parsed.missing.length} inconnues : {parsed.missing.slice(0, 5).join(', ')}{parsed.missing.length > 5 ? '…' : ''}</span>
+            <span className="text-again">
+              {' · '}
+              {t('decks.form.unknown', {
+                n: parsed.missing.length,
+                names: parsed.missing.slice(0, 5).join(', ') + (parsed.missing.length > 5 ? '…' : ''),
+              })}
+            </span>
           )}
         </div>
       )}
@@ -179,13 +183,13 @@ function NewDeckForm({ onDone }: { onDone: () => void }) {
             onDone()
           }}
         >
-          Créer
+          {t('common.create')}
         </button>
         <button className="btn-ghost" onClick={onDone}>
-          Annuler
+          {t('common.cancel')}
         </button>
       </div>
-      <p className="text-xs text-muted">Tu peux aussi ajouter des cartes une par une depuis leur fiche dans l'onglet Cartes.</p>
+      <p className="text-xs text-muted">{t('decks.form.hint')}</p>
     </div>
   )
 }

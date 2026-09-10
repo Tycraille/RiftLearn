@@ -1,7 +1,8 @@
 import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { db } from './schema'
-import { countToday, createCustomDeck, exportAll, getState, importAll, listCustomDecks, resetProgress, review, saveSettings, getSettings } from './repo'
+import { countToday, createCustomDeck, exportAll, getState, ImportError, importAll, listCustomDecks, parseExport, resetProgress, review, saveSettings, getSettings } from './repo'
+import { detectLanguage } from '../i18n'
 import { Rating } from '../srs/scheduler'
 
 beforeEach(async () => {
@@ -39,5 +40,29 @@ describe('repo', () => {
     expect(await getState('a', 'name')).toMatchObject({ reps: 1 })
     expect((await listCustomDecks())[0].name).toBe('Mon deck')
     expect((await getSettings()).playRateThreshold).toBe(12)
+  })
+
+  it('language defaults to the browser language and is persisted in settings', async () => {
+    expect((await getSettings()).language).toBe(detectLanguage())
+    await saveSettings({ language: 'fr' })
+    expect((await getSettings()).language).toBe('fr')
+    await saveSettings({ language: 'en' })
+    expect((await db.settings.get('main'))?.language).toBe('en')
+  })
+
+  it('parseExport rejects bad files with a translatable error', () => {
+    const keyOf = (json: string) => {
+      try {
+        parseExport(json)
+      } catch (e) {
+        return e instanceof ImportError ? e.key : String(e)
+      }
+      return null
+    }
+    expect(keyOf('not json')).toBe('import.invalidJson')
+    expect(keyOf('null')).toBe('import.notRiftlearn')
+    expect(keyOf('{"app":"other","version":1}')).toBe('import.notRiftlearn')
+    expect(keyOf('{"app":"riftlearn","version":1,"cardStates":[]}')).toBe('import.incomplete')
+    expect(keyOf('{"app":"riftlearn","version":1,"cardStates":[],"reviewLogs":[]}')).toBeNull()
   })
 })

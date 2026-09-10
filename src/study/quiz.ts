@@ -1,4 +1,5 @@
 import { DOMAIN_INFO, DOMAINS, type Card, type Domain } from '../data/types'
+import type { Translate } from '../i18n'
 
 export type QuizKind = 'energy' | 'domain' | 'name-from-text' | 'name-from-image'
 
@@ -68,7 +69,7 @@ export function availableKinds(card: Card): QuizKind[] {
   return kinds
 }
 
-export function makeQuestion(card: Card, pool: Card[], rng: Rng = Math.random, kind?: QuizKind): QuizQuestion {
+export function makeQuestion(card: Card, pool: Card[], t: Translate, rng: Rng = Math.random, kind?: QuizKind): QuizQuestion {
   const kinds = availableKinds(card)
   const k = kind && kinds.includes(kind) ? kind : kinds[Math.floor(rng() * kinds.length)]
 
@@ -79,23 +80,23 @@ export function makeQuestion(card: Card, pool: Card[], rng: Rng = Math.random, k
       const near = candidates.sort((a, b) => Math.abs(a - card.energy!) - Math.abs(b - card.energy!)).slice(0, 6)
       const wrong = shuffle(near, rng).slice(0, 3).map(String)
       while (wrong.length < 3) wrong.push(String(card.energy! + wrong.length + 1))
-      return finish(k, card, `Quel est le coût en énergie de « ${card.name} » ?`, answer, wrong, rng, { image: card.imageUrl })
+      return finish(k, card, t('quiz.energy', { name: card.name }), answer, wrong, rng, { image: card.imageUrl })
     }
     case 'domain': {
       const answer = DOMAIN_INFO[card.domain].label
       const wrong = shuffle(DOMAINS.filter((d): d is Domain => d !== card.domain && d !== 'multi'), rng)
         .slice(0, 3)
         .map((d) => DOMAIN_INFO[d].label)
-      return finish(k, card, `Quel est le domaine de « ${card.name} » ?`, answer, wrong, rng, { image: card.imageUrl })
+      return finish(k, card, t('quiz.domain', { name: card.name }), answer, wrong, rng, { image: card.imageUrl })
     }
     case 'name-from-text': {
       const wrong = distractorCards(card, pool, 3, rng).map((c) => c.name)
-      return finish(k, card, 'Quelle carte a cet effet ?', card.name, wrong, rng, { text: card.textRich ?? card.text! })
+      return finish(k, card, t('quiz.nameFromText'), card.name, wrong, rng, { text: card.textRich ?? card.text! })
     }
     case 'name-from-image':
     default: {
       const wrong = distractorCards(card, pool, 3, rng).map((c) => c.name)
-      return finish('name-from-image', card, 'Quelle est cette carte ?', card.name, wrong, rng, { image: card.imageUrl })
+      return finish('name-from-image', card, t('quiz.nameFromImage'), card.name, wrong, rng, { image: card.imageUrl })
     }
   }
 }

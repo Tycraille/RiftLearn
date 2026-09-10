@@ -3,6 +3,7 @@ import { useMemo } from 'react'
 import { useCards } from '../data/CardsContext'
 import { db, DEFAULT_SETTINGS, type CardState, type Settings } from '../db/schema'
 import { deriveDecks, type Deck } from '../decks/derived'
+import { useT } from '../i18n/I18nContext'
 import type { StudyMode } from '../study/modes'
 
 export function useSettings(): Settings {
@@ -28,7 +29,8 @@ export function useDecks(): Deck[] {
   const { cards } = useCards()
   const settings = useSettings()
   const custom = useCustomDecks()
-  return useMemo(() => deriveDecks(cards, settings.playRateThreshold, custom), [cards, settings.playRateThreshold, custom])
+  const { t } = useT()
+  return useMemo(() => deriveDecks(cards, settings.playRateThreshold, t, custom), [cards, settings.playRateThreshold, t, custom])
 }
 
 export function useLogs() {

@@ -1,13 +1,15 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { CARD_TYPES, DOMAIN_INFO, DOMAINS, TYPE_LABELS, type Card } from '../../data/types'
+import { CARD_TYPES, DOMAIN_INFO, DOMAINS, type Card } from '../../data/types'
 import type { CardState, ReviewLog } from '../../db/schema'
+import { useT } from '../../i18n/I18nContext'
 import { isDue, localDay } from '../../srs/scheduler'
-import { MODE_INFO, STUDY_MODES, type StudyMode } from '../../study/modes'
+import { STUDY_MODES, type StudyMode } from '../../study/modes'
 import { useAllStates, useDecks, useLogs, useSettings } from '../hooks'
 import { ModeTabs, useStudyMode } from './Decks'
 
 export function Dashboard() {
+  const { t } = useT()
   const decks = useDecks()
   const settings = useSettings()
   const states = useAllStates()
@@ -50,11 +52,11 @@ export function Dashboard() {
           <h1 className="text-2xl font-bold">
             <span className="text-accent">Rift</span>Learn
           </h1>
-          <p className="text-sm text-muted">{meta.length} cartes méta (≥ {settings.playRateThreshold} % de taux de jeu)</p>
+          <p className="text-sm text-muted">{t('dashboard.metaCount', { n: meta.length, threshold: settings.playRateThreshold })}</p>
         </div>
         {best && (
           <Link to={`/study/all?mode=${best.mode}`} className="btn-primary">
-            Réviser maintenant
+            {t('dashboard.studyNow')}
           </Link>
         )}
       </header>
@@ -62,12 +64,12 @@ export function Dashboard() {
       <section className="grid gap-3 sm:grid-cols-3">
         {dueByMode.map((x) => (
           <Link key={x.mode} to={`/study/all?mode=${x.mode}`} className="panel p-4 transition hover:border-accent">
-            <div className="label">{MODE_INFO[x.mode].label}</div>
+            <div className="label">{t(`mode.${x.mode}.label`)}</div>
             <div className="mt-2 flex items-baseline gap-3">
               <span className="text-3xl font-bold text-again">{x.due}</span>
-              <span className="text-sm text-muted">dues</span>
+              <span className="text-sm text-muted">{t('dashboard.due')}</span>
               <span className="text-xl font-semibold text-accent">{Math.min(x.fresh, settings.dailyNewLimit)}</span>
-              <span className="text-sm text-muted">nouvelles</span>
+              <span className="text-sm text-muted">{t('dashboard.new')}</span>
             </div>
           </Link>
         ))}
@@ -76,36 +78,36 @@ export function Dashboard() {
       <section className="grid gap-3 sm:grid-cols-[auto_1fr]">
         <div className="panel flex flex-col justify-center p-4 text-center sm:w-40">
           <div className="text-4xl font-bold">{streak}</div>
-          <div className="text-xs text-muted">jour{streak > 1 ? 's' : ''} d'affilée</div>
+          <div className="text-xs text-muted">{t('dashboard.streak', { n: streak })}</div>
           <div className="mt-2 text-sm">
-            <span className="font-semibold">{todayCount}</span> <span className="text-muted">aujourd'hui</span>
+            <span className="font-semibold">{todayCount}</span> <span className="text-muted">{t('dashboard.today')}</span>
           </div>
         </div>
         <div className="panel overflow-x-auto p-4">
-          <div className="label mb-2">12 dernières semaines</div>
+          <div className="label mb-2">{t('dashboard.lastWeeks')}</div>
           <Heatmap days={days} now={now} />
         </div>
       </section>
 
       <section className="panel space-y-3 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="label">Progression par domaine et type</h2>
+          <h2 className="label">{t('dashboard.progressTitle')}</h2>
           <ModeTabs mode={mode} onChange={setMode} />
         </div>
         <Breakdown cards={meta} states={modeStates} groups={DOMAINS.map((d) => ({ key: d, label: DOMAIN_INFO[d].label, color: DOMAIN_INFO[d].color, match: (c: Card) => c.domain === d }))} />
-        <Breakdown cards={meta} states={modeStates} groups={CARD_TYPES.map((t) => ({ key: t, label: TYPE_LABELS[t], match: (c: Card) => c.type === t }))} />
+        <Breakdown cards={meta} states={modeStates} groups={CARD_TYPES.map((type) => ({ key: type, label: t(`type.${type}`), match: (c: Card) => c.type === type }))} />
         <div className="flex gap-4 text-xs text-muted">
           <span>
             <i className="mr-1 inline-block h-2 w-2 rounded-sm bg-good" />
-            maîtrisée (≥ 21 j)
+            {t('status.matureLegend')}
           </span>
           <span>
             <i className="mr-1 inline-block h-2 w-2 rounded-sm bg-hard" />
-            en cours
+            {t('status.learning')}
           </span>
           <span>
             <i className="mr-1 inline-block h-2 w-2 rounded-sm bg-line" />
-            nouvelle
+            {t('status.new')}
           </span>
         </div>
       </section>
@@ -118,7 +120,7 @@ function computeActivity(logs: ReviewLog[], now: Date) {
   for (const l of logs) days.set(l.day, (days.get(l.day) ?? 0) + 1)
   let streak = 0
   const d = new Date(now)
-  if (!days.has(localDay(d))) d.setDate(d.getDate() - 1) // la journée en cours ne casse pas la série
+  if (!days.has(localDay(d))) d.setDate(d.getDate() - 1) // the current day does not break the streak
   while (days.has(localDay(d))) {
     streak++
     d.setDate(d.getDate() - 1)
@@ -127,14 +129,15 @@ function computeActivity(logs: ReviewLog[], now: Date) {
 }
 
 function Heatmap({ days, now }: { days: Map<string, number>; now: Date }) {
+  const { t, date } = useT()
   const weeks = 12
   const end = new Date(now)
   const start = new Date(end)
   start.setDate(end.getDate() - (weeks * 7 - 1) - ((end.getDay() + 6) % 7))
-  const cells: { day: string; n: number }[] = []
+  const cells: { day: string; date: Date; n: number }[] = []
   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
     const k = localDay(d)
-    cells.push({ day: k, n: days.get(k) ?? 0 })
+    cells.push({ day: k, date: new Date(d), n: days.get(k) ?? 0 })
   }
   const max = Math.max(1, ...cells.map((c) => c.n))
   const cols: (typeof cells)[] = []
@@ -146,7 +149,13 @@ function Heatmap({ days, now }: { days: Map<string, number>; now: Date }) {
           {col.map((c) => {
             const level = c.n === 0 ? 0 : Math.ceil((c.n / max) * 4)
             const bg = ['bg-panel-2', 'bg-accent/30', 'bg-accent/50', 'bg-accent/75', 'bg-accent'][level]
-            return <div key={c.day} className={`h-3 w-3 rounded-sm ${bg}`} title={`${c.day} : ${c.n} révision${c.n > 1 ? 's' : ''}`} />
+            return (
+              <div
+                key={c.day}
+                className={`h-3 w-3 rounded-sm ${bg}`}
+                title={t('dashboard.heatmapCell', { day: date(c.date), reviews: t('common.reviews', { n: c.n }) })}
+              />
+            )
           })}
         </div>
       ))}
@@ -163,6 +172,7 @@ function Breakdown({
   states: Map<string, CardState>
   groups: { key: string; label: string; color?: string; match: (c: Card) => boolean }[]
 }) {
+  const { t } = useT()
   return (
     <div className="space-y-1.5">
       {groups.map((g) => {
@@ -188,7 +198,7 @@ function Breakdown({
               <div className="bg-hard" style={{ width: pct(learning) }} />
             </div>
             <span className="w-24 shrink-0 text-right text-xs text-muted">
-              {mature}/{list.length} · {fresh} new
+              {t('dashboard.breakdown', { mature, total: list.length, fresh })}
             </span>
           </div>
         )

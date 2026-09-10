@@ -1,4 +1,6 @@
 import { NavLink, Route, Routes, useLocation } from 'react-router-dom'
+import type { MessageKey } from '../i18n'
+import { useT } from '../i18n/I18nContext'
 import { Dashboard } from './pages/Dashboard'
 import { Decks } from './pages/Decks'
 import { Study } from './pages/Study'
@@ -6,14 +8,20 @@ import { CardsBrowser } from './pages/CardsBrowser'
 import { CardDetail } from './pages/CardDetail'
 import { SettingsPage } from './pages/SettingsPage'
 
-const NAV: { to: string; label: string; icon: string }[] = [
-  { to: '/', label: 'Accueil', icon: '⌂' },
-  { to: '/decks', label: 'Paquets', icon: '▤' },
-  { to: '/cards', label: 'Cartes', icon: '⌕' },
-  { to: '/settings', label: 'Réglages', icon: '⚙' },
+const NAV: { to: string; label: MessageKey; icon: string }[] = [
+  { to: '/', label: 'nav.home', icon: '⌂' },
+  { to: '/decks', label: 'nav.decks', icon: '▤' },
+  { to: '/cards', label: 'nav.cards', icon: '⌕' },
+  { to: '/settings', label: 'nav.settings', icon: '⚙' },
 ]
 
+export function LoadingCards() {
+  const { t } = useT()
+  return <div className="p-8 text-center text-muted">{t('app.loadingCards')}</div>
+}
+
 export function App() {
+  const { t } = useT()
   const { pathname } = useLocation()
   const inStudy = pathname.startsWith('/study')
   return (
@@ -34,7 +42,7 @@ export function App() {
                 }
               >
                 <span className="mr-2">{n.icon}</span>
-                {n.label}
+                {t(n.label)}
               </NavLink>
             ))}
           </nav>
@@ -62,7 +70,7 @@ export function App() {
               className={({ isActive }) => `flex flex-1 flex-col items-center py-2 text-xs ${isActive ? 'text-accent' : 'text-muted'}`}
             >
               <span className="text-xl leading-none">{n.icon}</span>
-              <span className="mt-1">{n.label}</span>
+              <span className="mt-1">{t(n.label)}</span>
             </NavLink>
           ))}
         </nav>

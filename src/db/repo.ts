@@ -3,6 +3,7 @@
  * All UI code goes through this module; it is also where a future cloud sync would plug in.
  */
 import { db, DEFAULT_SETTINGS, type CardState, type CustomDeck, type ReviewLog, type Settings } from './schema'
+import type { MessageKey } from '../i18n'
 import { emptyState, localDay, schedule, stateId, type Grade } from '../srs/scheduler'
 import type { StudyMode } from '../study/modes'
 
@@ -145,10 +146,25 @@ export async function exportAll(): Promise<ExportFile> {
   }
 }
 
+/** Import failure; `key` is the dictionary message the UI shows. */
+export class ImportError extends Error {
+  readonly key: MessageKey
+  constructor(key: MessageKey) {
+    super(key)
+    this.name = 'ImportError'
+    this.key = key
+  }
+}
+
 export function parseExport(json: string): ExportFile {
-  const data = JSON.parse(json) as Partial<ExportFile>
-  if (data.app !== 'riftlearn' || data.version !== 1) throw new Error("Ce fichier n'est pas un export RiftLearn v1.")
-  if (!Array.isArray(data.cardStates) || !Array.isArray(data.reviewLogs)) throw new Error('Export incomplet.')
+  let data: Partial<ExportFile> | null
+  try {
+    data = JSON.parse(json)
+  } catch {
+    throw new ImportError('import.invalidJson')
+  }
+  if (data?.app !== 'riftlearn' || data.version !== 1) throw new ImportError('import.notRiftlearn')
+  if (!Array.isArray(data.cardStates) || !Array.isArray(data.reviewLogs)) throw new ImportError('import.incomplete')
   return data as ExportFile
 }
 
