@@ -125,6 +125,8 @@ export const fr = {
   'cards.sort.energy': 'Tri : coût',
   'cards.sort.name': 'Tri : nom',
   'cards.metaOnly': 'Seulement ≥ {threshold} % de taux de jeu',
+  'cards.filters': 'Filtres',
+  'cards.resetFilters': 'Réinitialiser',
   'cards.showMore': 'Afficher plus ({n} restantes)',
 
   // Card detail
