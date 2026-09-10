@@ -70,3 +70,36 @@ export interface CardsFile {
   }
   cards: Card[]
 }
+
+/** riftdecks card category for a legend ("trap" has only been seen on the sideboard, which is not imported). */
+export type LegendCardCategory = 'core' | 'flex' | 'fringe' | 'gem' | 'trap'
+
+export interface LegendCardStat {
+  /** Card id, always present in cards.json */
+  id: string
+  /** % of the legend's decks running the card */
+  presence: number
+  /** Average number of copies in the decks running it */
+  copies: number
+  category: LegendCardCategory
+}
+
+export interface Legend {
+  /** riftdecks slug, the identifier (e.g. "master-yi-wuju-bladesman") */
+  slug: string
+  /** Full name, e.g. "Master Yi, Wuju Bladesman" */
+  name: string
+  decks: number
+  /** Meta share, in % */
+  share: number
+  /** Main Deck and Battlefields cards, by presence descending */
+  cards: LegendCardStat[]
+}
+
+export interface LegendsFile {
+  generatedAt: string
+  source: string
+  minDecks: number
+  /** By deck count descending */
+  legends: Legend[]
+}

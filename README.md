@@ -34,7 +34,8 @@ The `scripts/import.ts` script:
 
 1. reads the meta stats embedded in https://riftdecks.com/cards/stats (`var DATA = [...]`); the page sits behind Cloudflare, so the script falls back to Playwright (headless Chromium) when the direct fetch is refused;
 2. fetches full card details (cost, rules text, image, rarity) from the open https://api.riftcodex.com API;
-3. joins both sources on the `riftbound_id` (e.g. `ogn-045-298`) and writes `public/data/cards.json`.
+3. joins both sources on the `riftbound_id` (e.g. `ogn-045-298`) and writes `public/data/cards.json`;
+4. reads the legend list at https://riftdecks.com/legends and, for every legend with at least 100 recorded decks, its per-legend card stats (`/legends/<slug>/stats`, Main Deck and Battlefields boards), then writes `public/data/legends.json` (cards not in `cards.json` are dropped and reported). This step fetches about 50 pages and takes a few minutes.
 
 First use of the Playwright fallback:
 
@@ -69,6 +70,7 @@ Issues are filed on GitHub (bug and enhancement templates). Each issue is worked
 scripts/import.ts      data import (riftdecks + Riftcodex)
 scripts/merge.ts       join and normalization (unit-tested)
 public/data/cards.json generated data — never edit by hand
+public/data/legends.json per-legend card stats, generated — never edit by hand
 src/data/              types and JSON loading
 src/db/                Dexie (IndexedDB): SRS states, review log, decks, settings
 src/srs/               ts-fsrs wrapper
