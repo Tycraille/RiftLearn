@@ -128,7 +128,10 @@ export function CardText({ text, className = '' }: { text: string | null; classN
 // ---- Image ------------------------------------------------------------------
 
 export function CardImage({ card, className = '', hideName = false }: { card: Card; className?: string; hideName?: boolean }) {
-  const [src, setSrc] = useState(card.imageUrl)
+  // L'URL est dérivée de la carte courante ; on ne mémorise que l'id dont le CDN a échoué,
+  // sinon l'image resterait figée sur la première carte quand la prop change.
+  const [failedId, setFailedId] = useState<string | null>(null)
+  const src = failedId === card.id ? card.imageFallback : card.imageUrl
   return (
     <div className={`relative overflow-hidden rounded-[4.5%] bg-panel-2 ${className}`}>
       <img
@@ -137,7 +140,7 @@ export function CardImage({ card, className = '', hideName = false }: { card: Ca
         loading="lazy"
         draggable={false}
         className="block h-auto w-full select-none"
-        onError={() => src !== card.imageFallback && setSrc(card.imageFallback)}
+        onError={() => failedId !== card.id && setFailedId(card.id)}
       />
       {hideName && (
         <>
