@@ -15,14 +15,6 @@ export const DOMAIN_INFO: Record<Domain, { label: string; color: string }> = {
   colorless: { label: 'Colorless', color: '#8A8F98' },
 }
 
-export const TYPE_LABELS: Record<CardType, string> = {
-  Unit: 'Unités',
-  Spell: 'Sorts',
-  Gear: 'Équipements',
-  Rune: 'Runes',
-  Battlefield: 'Champs de bataille',
-}
-
 export const SET_LABELS: Record<string, string> = {
   OGN: 'Origins',
   OGS: 'Origins Proving Grounds',

@@ -1,4 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie'
+import { detectLanguage, type Lang } from '../i18n'
 import type { StudyMode } from '../study/modes'
 
 /** Mirror of ts-fsrs `Card`, serializable (dates as numbers) */
@@ -49,6 +50,8 @@ export interface Settings {
   dailyNewLimit: number
   dailyReviewLimit: number
   enabledModes: StudyMode[]
+  /** UI language (card names and rules text stay in English) */
+  language: Lang
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -57,6 +60,7 @@ export const DEFAULT_SETTINGS: Settings = {
   dailyNewLimit: 15,
   dailyReviewLimit: 200,
   enabledModes: ['image', 'name', 'quiz'],
+  language: detectLanguage(),
 }
 
 export class RiftLearnDB extends Dexie {

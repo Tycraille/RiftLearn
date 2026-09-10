@@ -1,5 +1,6 @@
-import { CARD_TYPES, DOMAIN_INFO, DOMAINS, SET_LABELS, TYPE_LABELS, type Card } from '../data/types'
+import { CARD_TYPES, DOMAIN_INFO, DOMAINS, SET_LABELS, type Card } from '../data/types'
 import type { CustomDeck } from '../db/schema'
+import type { Translate } from '../i18n'
 
 export type DeckKind = 'all' | 'domain' | 'type' | 'set' | 'custom'
 
@@ -18,17 +19,17 @@ export function metaCards(cards: Card[], threshold: number): Card[] {
   return cards.filter((c) => c.stats.play >= threshold)
 }
 
-export function deriveDecks(allCards: Card[], threshold: number, custom: CustomDeck[] = []): Deck[] {
+export function deriveDecks(allCards: Card[], threshold: number, t: Translate, custom: CustomDeck[] = []): Deck[] {
   const meta = metaCards(allCards, threshold)
-  const decks: Deck[] = [{ id: 'all', kind: 'all', label: 'Toutes les cartes méta', cards: meta }]
+  const decks: Deck[] = [{ id: 'all', kind: 'all', label: t('decks.all'), cards: meta }]
 
   for (const d of DOMAINS) {
     const cards = meta.filter((c) => c.domain === d)
     if (cards.length) decks.push({ id: `domain:${d}`, kind: 'domain', label: DOMAIN_INFO[d].label, color: DOMAIN_INFO[d].color, cards })
   }
-  for (const t of CARD_TYPES) {
-    const cards = meta.filter((c) => c.type === t)
-    if (cards.length) decks.push({ id: `type:${t}`, kind: 'type', label: TYPE_LABELS[t], cards })
+  for (const type of CARD_TYPES) {
+    const cards = meta.filter((c) => c.type === type)
+    if (cards.length) decks.push({ id: `type:${type}`, kind: 'type', label: t(`type.${type}`), cards })
   }
   const sets = [...new Set(meta.map((c) => c.set))].sort()
   for (const s of sets) {

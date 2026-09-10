@@ -1,5 +1,6 @@
 import { createEmptyCard, fsrs, generatorParameters, Rating, type Card as FsrsCard, type Grade } from 'ts-fsrs'
 import type { CardState } from '../db/schema'
+import type { Translate } from '../i18n'
 import type { StudyMode } from '../study/modes'
 
 export type { Grade }
@@ -75,20 +76,19 @@ export function isMature(s: CardState): boolean {
   return s.state === 2 && s.scheduled_days >= 21
 }
 
-/** Short interval formatting (French UI strings): "10 min", "3 j", "2 mois" */
-export function formatInterval(from: Date, to: Date): string {
+/** Short interval formatting, e.g. "10 min", "3 j" / "3 d", "2 mois" / "2 mo" */
+export function formatInterval(from: Date, to: Date, t: Translate): string {
   const ms = to.getTime() - from.getTime()
   const min = Math.round(ms / 60_000)
-  if (min < 1) return '< 1 min'
-  if (min < 60) return `${min} min`
+  if (min < 1) return t('interval.lessThanMinute')
+  if (min < 60) return t('interval.minutes', { n: min })
   const h = Math.round(min / 60)
-  if (h < 24) return `${h} h`
+  if (h < 24) return t('interval.hours', { n: h })
   const d = Math.round(h / 24)
-  if (d < 30) return `${d} j`
+  if (d < 30) return t('interval.days', { n: d })
   const mo = Math.round(d / 30)
-  if (mo < 12) return `${mo} mois`
-  const y = (d / 365).toFixed(1).replace('.0', '')
-  return `${y} an${Number(y) >= 2 ? 's' : ''}`
+  if (mo < 12) return t('interval.months', { n: mo })
+  return t('interval.years', { n: Math.round((d / 365) * 10) / 10 })
 }
 
 export function localDay(d = new Date()): string {

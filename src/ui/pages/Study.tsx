@@ -5,8 +5,10 @@ import type { Card } from '../../data/types'
 import { countToday, getSettings, getStatesForMode, review } from '../../db/repo'
 import type { CardState } from '../../db/schema'
 import { findDeck } from '../../decks/derived'
+import type { MessageKey } from '../../i18n'
+import { useT } from '../../i18n/I18nContext'
 import { emptyState, formatInterval, preview, Rating, type Grade } from '../../srs/scheduler'
-import { MODE_INFO, STUDY_MODES, type StudyMode } from '../../study/modes'
+import { STUDY_MODES, type StudyMode } from '../../study/modes'
 import { makeQuestion, type QuizQuestion } from '../../study/quiz'
 import { buildQueue, interleave } from '../../study/session'
 import { useDecks } from '../hooks'
@@ -24,6 +26,7 @@ interface Summary {
 }
 
 export function Study() {
+  const { t } = useT()
   const { deckId = '' } = useParams()
   const [params] = useSearchParams()
   const navigate = useNavigate()
@@ -71,7 +74,7 @@ export function Study() {
     setFlipped(false)
     setChosen(null)
     shownAt.current = Date.now()
-    if (current && mode === 'quiz') setQuestion(makeQuestion(current.card, pool))
+    if (current && mode === 'quiz') setQuestion(makeQuestion(current.card, pool, t))
     else setQuestion(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current?.card.id, mode])
@@ -135,8 +138,8 @@ export function Study() {
     return () => window.removeEventListener('keydown', onKey)
   }, [current, flipped, chosen, mode, grade, answerQuiz, nextAfterQuiz, navigate])
 
-  if (!deck) return <Empty title="Paquet introuvable" />
-  if (!queue) return <div className="p-8 text-center text-muted">Préparation de la session…</div>
+  if (!deck) return <Empty title={t('study.deckNotFound')} />
+  if (!queue) return <div className="p-8 text-center text-muted">{t('study.preparing')}</div>
   if (!current) return <Done deck={deck.label} mode={mode} summary={summary} />
 
   const remaining = queue.length
@@ -148,9 +151,10 @@ export function Study() {
         <Link to="/decks" className="hover:text-ink">
           ← {deck.label}
         </Link>
-        <span>{MODE_INFO[mode].short}</span>
+        <span>{t(`mode.${mode}.short`)}</span>
         <span>
-          {isNew ? <span className="text-accent">nouvelle</span> : <span className="text-again">révision</span>} · {remaining} restante{remaining > 1 ? 's' : ''}
+          {isNew ? <span className="text-accent">{t('status.new')}</span> : <span className="text-again">{t('study.reviewBadge')}</span>} ·{' '}
+          {t('study.remaining', { n: remaining })}
         </span>
       </header>
 
@@ -174,7 +178,7 @@ export function Study() {
                 <span>{current.card.type}</span>
                 <DomainBadge domain={current.card.domain} small />
               </div>
-              {!flipped && <p className="mt-4 text-sm text-muted">Coût ? Effet ?</p>}
+              {!flipped && <p className="mt-4 text-sm text-muted">{t('study.namePrompt')}</p>}
             </div>
             {flipped && (
               <div className="panel p-4">
@@ -188,11 +192,11 @@ export function Study() {
       <footer className="sticky bottom-0 mt-4 bg-bg/95 py-3 backdrop-blur" style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}>
         {mode === 'quiz' ? (
           <button className="btn-primary w-full py-3 text-base" disabled={chosen == null} onClick={nextAfterQuiz}>
-            {chosen == null ? 'Choisis une réponse' : 'Suivant'} <kbd className="ml-2 hidden text-xs opacity-60 md:inline">Espace</kbd>
+            {chosen == null ? t('study.pickAnswer') : t('study.next')} <kbd className="ml-2 hidden text-xs opacity-60 md:inline">{t('study.spaceKey')}</kbd>
           </button>
         ) : !flipped ? (
           <button className="btn-primary w-full py-3 text-base" onClick={() => setFlipped(true)}>
-            Retourner <kbd className="ml-2 hidden text-xs opacity-60 md:inline">Espace</kbd>
+            {t('study.flip')} <kbd className="ml-2 hidden text-xs opacity-60 md:inline">{t('study.spaceKey')}</kbd>
           </button>
         ) : (
           <GradeButtons state={current.state} onGrade={grade} />
@@ -203,20 +207,21 @@ export function Study() {
 }
 
 function GradeButtons({ state, onGrade }: { state: CardState; onGrade: (g: Grade) => void }) {
+  const { t } = useT()
   const [now] = useState(() => new Date())
   const p = useMemo(() => preview(state, now), [state, now])
-  const defs: { g: Grade; label: string; cls: string }[] = [
-    { g: Rating.Again, label: 'Encore', cls: 'bg-again/20 text-again hover:bg-again/30' },
-    { g: Rating.Hard, label: 'Difficile', cls: 'bg-hard/20 text-hard hover:bg-hard/30' },
-    { g: Rating.Good, label: 'Bien', cls: 'bg-good/20 text-good hover:bg-good/30' },
-    { g: Rating.Easy, label: 'Facile', cls: 'bg-easy/20 text-easy hover:bg-easy/30' },
+  const defs: { g: Grade; label: MessageKey; cls: string }[] = [
+    { g: Rating.Again, label: 'study.grade.again', cls: 'bg-again/20 text-again hover:bg-again/30' },
+    { g: Rating.Hard, label: 'study.grade.hard', cls: 'bg-hard/20 text-hard hover:bg-hard/30' },
+    { g: Rating.Good, label: 'study.grade.good', cls: 'bg-good/20 text-good hover:bg-good/30' },
+    { g: Rating.Easy, label: 'study.grade.easy', cls: 'bg-easy/20 text-easy hover:bg-easy/30' },
   ]
   return (
     <div className="grid grid-cols-4 gap-2">
       {defs.map((d, i) => (
         <button key={d.g} onClick={() => onGrade(d.g)} className={`flex flex-col items-center rounded-lg py-2.5 transition active:scale-[0.97] ${d.cls}`}>
-          <span className="font-semibold">{d.label}</span>
-          <span className="text-xs opacity-80">{formatInterval(now, p[d.g])}</span>
+          <span className="font-semibold">{t(d.label)}</span>
+          <span className="text-xs opacity-80">{formatInterval(now, p[d.g], t)}</span>
           <kbd className="hidden text-[10px] opacity-50 md:inline">{i + 1}</kbd>
         </button>
       ))}
@@ -264,29 +269,30 @@ function QuizView({ q, chosen, onChoose }: { q: QuizQuestion; chosen: number | n
 }
 
 function Done({ deck, mode, summary }: { deck: string; mode: StudyMode; summary: Summary }) {
+  const { t } = useT()
   const mins = Math.max(1, Math.round((Date.now() - summary.startedAt) / 60_000))
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-4 p-6 text-center">
       <div className="text-4xl">🎉</div>
-      <h1 className="text-2xl font-bold">Session terminée</h1>
+      <h1 className="text-2xl font-bold">{t('study.done')}</h1>
       <p className="text-muted">
-        {deck} · {MODE_INFO[mode].label}
+        {deck} · {t(`mode.${mode}.label`)}
       </p>
       {summary.reviewed > 0 ? (
         <div className="grid w-full grid-cols-3 gap-2">
-          <Stat label="Réponses" value={summary.reviewed} />
-          <Stat label="Ratées" value={summary.again} />
-          <Stat label="Minutes" value={mins} />
+          <Stat label={t('study.answers')} value={summary.reviewed} />
+          <Stat label={t('study.missed')} value={summary.again} />
+          <Stat label={t('study.minutes')} value={mins} />
         </div>
       ) : (
-        <p className="text-sm text-muted">Rien à réviser pour l'instant dans ce paquet. Reviens plus tard ou augmente le quota de nouvelles cartes dans les réglages.</p>
+        <p className="text-sm text-muted">{t('study.nothingToStudy')}</p>
       )}
       <div className="flex gap-2">
         <Link to="/decks" className="btn-primary">
-          Paquets
+          {t('nav.decks')}
         </Link>
         <Link to="/" className="btn-ghost">
-          Accueil
+          {t('nav.home')}
         </Link>
       </div>
     </div>
@@ -303,11 +309,12 @@ function Stat({ label, value }: { label: string; value: number }) {
 }
 
 function Empty({ title }: { title: string }) {
+  const { t } = useT()
   return (
     <div className="p-8 text-center">
       <p className="text-muted">{title}</p>
       <Link to="/decks" className="btn-ghost mt-4">
-        Retour aux paquets
+        {t('study.backToDecks')}
       </Link>
     </div>
   )

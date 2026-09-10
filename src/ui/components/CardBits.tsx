@@ -1,14 +1,16 @@
 import { useState, type CSSProperties } from 'react'
 import { DOMAIN_INFO, type Card, type Domain } from '../../data/types'
+import { useT } from '../../i18n/I18nContext'
 
 // ---- Cost icons -------------------------------------------------------------
 
 export function EnergyPip({ n, size = 'md' }: { n: number | string; size?: 'sm' | 'md' | 'lg' }) {
+  const { t } = useT()
   const cls = size === 'lg' ? 'h-9 w-9 text-lg' : size === 'sm' ? 'h-4 w-4 text-[10px]' : 'h-6 w-6 text-xs'
   return (
     <span
       className={`inline-flex ${cls} items-center justify-center rounded-full bg-slate-200 font-bold text-slate-900 ring-2 ring-slate-500 align-middle`}
-      title={`${n} énergie`}
+      title={t('card.energy', { n })}
     >
       {n}
     </span>
@@ -23,8 +25,9 @@ const domainStyle = (d: string): CSSProperties => {
 }
 
 export function RunePip({ domain, size = 'md' }: { domain: string; size?: 'sm' | 'md' | 'lg' }) {
+  const { t } = useT()
   const cls = size === 'lg' ? 'h-8 w-8' : size === 'sm' ? 'h-3.5 w-3.5' : 'h-5 w-5'
-  const label = domain === 'rainbow' ? 'rune de n’importe quel domaine' : `rune ${DOMAIN_INFO[domain as Domain]?.label ?? domain}`
+  const label = domain === 'rainbow' ? t('card.runeAny') : t('card.rune', { domain: DOMAIN_INFO[domain as Domain]?.label ?? domain })
   return (
     <span
       className={`inline-block ${cls} rotate-45 rounded-[3px] ring-2 ring-slate-900/60 align-middle mx-0.5`}
@@ -86,7 +89,8 @@ export function textLines(text: string): string[] {
 }
 
 export function CardText({ text, className = '' }: { text: string | null; className?: string }) {
-  if (!text) return <p className={`italic text-muted ${className}`}>Pas de texte.</p>
+  const { t } = useT()
+  if (!text) return <p className={`italic text-muted ${className}`}>{t('card.noText')}</p>
   const lines = textLines(text)
   return (
     <div className={`space-y-1.5 leading-relaxed ${className}`}>
@@ -99,13 +103,13 @@ export function CardText({ text, className = '' }: { text: string | null; classN
             if ((m = part.match(/^:rb_rune_([a-z]+):$/))) return <RunePip key={i} domain={m[1]} size="sm" />
             if (part === ':rb_might:')
               return (
-                <span key={i} className="inline-block font-bold text-orange-300 align-middle" title="puissance">
+                <span key={i} className="inline-block font-bold text-orange-300 align-middle" title={t('card.might')}>
                   ⚔
                 </span>
               )
             if (part === ':rb_exhaust:')
               return (
-                <span key={i} className="inline-block text-sky-300 align-middle" title="épuiser">
+                <span key={i} className="inline-block text-sky-300 align-middle" title={t('card.exhaust')}>
                   ⟳
                 </span>
               )
@@ -128,6 +132,7 @@ export function CardText({ text, className = '' }: { text: string | null; classN
 // ---- Image ------------------------------------------------------------------
 
 export function CardImage({ card, className = '', hideName = false }: { card: Card; className?: string; hideName?: boolean }) {
+  const { t } = useT()
   // The URL is derived from the current card; we only remember which card id failed on the CDN,
   // otherwise the image would stay stuck on the first card when the prop changes.
   const [failedId, setFailedId] = useState<string | null>(null)
@@ -136,7 +141,7 @@ export function CardImage({ card, className = '', hideName = false }: { card: Ca
     <div className={`relative overflow-hidden rounded-[4.5%] bg-panel-2 ${className}`}>
       <img
         src={src}
-        alt={hideName ? 'Carte à deviner' : card.name}
+        alt={hideName ? t('card.hiddenAlt') : card.name}
         loading="lazy"
         draggable={false}
         className="block h-auto w-full select-none"
@@ -158,12 +163,14 @@ export function CardImage({ card, className = '', hideName = false }: { card: Ca
 // ---- Meta stats -------------------------------------------------------------
 
 export function MetaStats({ card, compact }: { card: Card; compact?: boolean }) {
+  const { t, num } = useT()
   const s = card.stats
+  const pct = (n: number) => t('common.percent', { n: num(n, 1) })
   const items: [string, string][] = [
-    ['Taux de jeu', `${s.play.toFixed(1)} %`],
-    ['Taux de victoire', s.win == null ? '—' : `${s.win.toFixed(1)} %`],
-    ['Copies moy.', s.copies.toFixed(1)],
-    ['Decks', s.decks.toLocaleString('fr-FR')],
+    [t('stats.playRate'), pct(s.play)],
+    [t('stats.winRate'), s.win == null ? '—' : pct(s.win)],
+    [t('stats.avgCopies'), num(s.copies, 1)],
+    [t('stats.decks'), num(s.decks)],
   ]
   return (
     <div className={`grid ${compact ? 'grid-cols-4 gap-1' : 'grid-cols-2 gap-2 sm:grid-cols-4'}`}>
@@ -179,6 +186,7 @@ export function MetaStats({ card, compact }: { card: Card; compact?: boolean }) 
 
 /** Full back side of a flashcard. */
 export function CardBack({ card, showImage = true }: { card: Card; showImage?: boolean }) {
+  const { t } = useT()
   return (
     <div className="space-y-3">
       <div className="flex items-start justify-between gap-3">
@@ -202,7 +210,7 @@ export function CardBack({ card, showImage = true }: { card: Card; showImage?: b
         <div className="flex flex-col items-end gap-1">
           <Cost card={card} size="lg" />
           {card.might != null && (
-            <span className="text-sm text-orange-300" title="puissance">
+            <span className="text-sm text-orange-300" title={t('card.might')}>
               ⚔ {card.might}
             </span>
           )}
@@ -211,12 +219,12 @@ export function CardBack({ card, showImage = true }: { card: Card; showImage?: b
       <div className="grid gap-3 sm:grid-cols-[1fr_180px]">
         <div className="space-y-3">
           <CardText text={card.textRich ?? card.text} />
-          {card.flavour && <p className="text-sm italic text-muted">« {card.flavour} »</p>}
+          {card.flavour && <p className="text-sm italic text-muted">{t('card.flavour', { text: card.flavour })}</p>}
           {card.tags.length > 0 && (
             <div className="flex flex-wrap gap-1">
-              {card.tags.map((t) => (
-                <span key={t} className="rounded bg-panel-2 px-1.5 py-0.5 text-[11px] text-muted">
-                  {t}
+              {card.tags.map((tag) => (
+                <span key={tag} className="rounded bg-panel-2 px-1.5 py-0.5 text-[11px] text-muted">
+                  {tag}
                 </span>
               ))}
             </div>

@@ -1,11 +1,14 @@
 import { useRef, useState } from 'react'
 import { useCards } from '../../data/CardsContext'
-import { exportAll, importAll, parseExport, resetProgress, saveSettings } from '../../db/repo'
+import { exportAll, ImportError, importAll, parseExport, resetProgress, saveSettings } from '../../db/repo'
 import { metaCards } from '../../decks/derived'
-import { MODE_INFO, STUDY_MODES, type StudyMode } from '../../study/modes'
+import { isLang, LANGUAGE_NAMES, LANGUAGES } from '../../i18n'
+import { useT } from '../../i18n/I18nContext'
+import { STUDY_MODES, type StudyMode } from '../../study/modes'
 import { useSettings } from '../hooks'
 
 export function SettingsPage() {
+  const { t, lang, date } = useT()
   const settings = useSettings()
   const { cards, file } = useCards()
   const [msg, setMsg] = useState<string | null>(null)
@@ -32,24 +35,46 @@ export function SettingsPage() {
   const doImport = async (f: File) => {
     try {
       const parsed = parseExport(await f.text())
-      if (!confirm(`Remplacer la progression locale par « ${f.name} » (${parsed.cardStates.length} cartes, ${parsed.reviewLogs.length} révisions) ?`)) return
+      const summary = {
+        file: f.name,
+        cards: t('common.cards', { n: parsed.cardStates.length }),
+        reviews: t('common.reviews', { n: parsed.reviewLogs.length }),
+      }
+      if (!confirm(t('settings.confirmImport', summary))) return
       await importAll(parsed)
-      setMsg('Progression importée.')
+      setMsg(t('settings.importDone'))
     } catch (e) {
-      setMsg(`Import impossible : ${(e as Error).message}`)
+      setMsg(t('settings.importFailed', { error: e instanceof ImportError ? t(e.key) : (e as Error).message }))
     }
   }
 
   return (
     <div className="max-w-2xl space-y-6">
-      <h1 className="text-2xl font-bold">Réglages</h1>
+      <h1 className="text-2xl font-bold">{t('nav.settings')}</h1>
 
       <section className="panel space-y-4 p-4">
+        <div className="flex items-center justify-between gap-3">
+          <label className="font-medium" htmlFor="language">
+            {t('settings.language')}
+          </label>
+          <select
+            id="language"
+            className="input max-w-48"
+            value={lang}
+            onChange={(e) => isLang(e.target.value) && saveSettings({ language: e.target.value })}
+          >
+            {LANGUAGES.map((l) => (
+              <option key={l} value={l}>
+                {LANGUAGE_NAMES[l]}
+              </option>
+            ))}
+          </select>
+        </div>
         <div>
           <div className="flex items-center justify-between">
-            <label className="font-medium">Seuil de taux de jeu</label>
+            <label className="font-medium">{t('settings.threshold')}</label>
             <span className="text-sm text-muted">
-              ≥ {settings.playRateThreshold} % → {metaCount} cartes
+              {t('settings.thresholdValue', { threshold: settings.playRateThreshold, cards: t('common.cards', { n: metaCount }) })}
             </span>
           </div>
           <input
@@ -61,26 +86,26 @@ export function SettingsPage() {
             onChange={(e) => saveSettings({ playRateThreshold: Number(e.target.value) })}
             className="mt-2 w-full accent-sky-400"
           />
-          <p className="text-xs text-muted">Une carte entre dans les paquets si elle est jouée dans au moins ce pourcentage des decks de tournoi.</p>
+          <p className="text-xs text-muted">{t('settings.thresholdHelp')}</p>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="label">Nouvelles cartes / jour / mode</label>
+            <label className="label">{t('settings.dailyNew')}</label>
             <input type="number" min={0} max={200} className="input mt-1" value={settings.dailyNewLimit} onChange={(e) => saveSettings({ dailyNewLimit: Math.max(0, Number(e.target.value) || 0) })} />
           </div>
           <div>
-            <label className="label">Révisions max / jour / mode</label>
+            <label className="label">{t('settings.dailyReviews')}</label>
             <input type="number" min={0} max={2000} className="input mt-1" value={settings.dailyReviewLimit} onChange={(e) => saveSettings({ dailyReviewLimit: Math.max(0, Number(e.target.value) || 0) })} />
           </div>
         </div>
         <div>
-          <label className="label">Modes actifs</label>
+          <label className="label">{t('settings.enabledModes')}</label>
           <div className="mt-2 space-y-1">
             {STUDY_MODES.map((m) => (
               <label key={m} className="flex items-center gap-2 text-sm">
                 <input type="checkbox" checked={settings.enabledModes.includes(m)} onChange={() => toggleMode(m)} />
-                <span className="font-medium">{MODE_INFO[m].label}</span>
-                <span className="text-muted">— {MODE_INFO[m].description}</span>
+                <span className="font-medium">{t(`mode.${m}.label`)}</span>
+                <span className="text-muted">— {t(`mode.${m}.description`)}</span>
               </label>
             ))}
           </div>
@@ -88,39 +113,45 @@ export function SettingsPage() {
       </section>
 
       <section className="panel space-y-3 p-4">
-        <h2 className="font-medium">Sauvegarde</h2>
-        <p className="text-sm text-muted">La progression est stockée dans ce navigateur. Exporte-la pour la transférer sur un autre appareil.</p>
+        <h2 className="font-medium">{t('settings.backup')}</h2>
+        <p className="text-sm text-muted">{t('settings.backupHelp')}</p>
         <div className="flex flex-wrap gap-2">
           <button className="btn-primary" onClick={doExport}>
-            Exporter (JSON)
+            {t('settings.export')}
           </button>
           <button className="btn-ghost" onClick={() => fileInput.current?.click()}>
-            Importer…
+            {t('settings.import')}
           </button>
           <input ref={fileInput} type="file" accept="application/json,.json" className="hidden" onChange={(e) => e.target.files?.[0] && doImport(e.target.files[0])} />
           <button
             className="btn-danger"
             onClick={async () => {
-              if (confirm('Effacer toute la progression (états et historique) ? Les paquets personnalisés sont conservés.')) {
+              if (confirm(t('settings.confirmReset'))) {
                 await resetProgress()
-                setMsg('Progression remise à zéro.')
+                setMsg(t('settings.resetDone'))
               }
             }}
           >
-            Remise à zéro
+            {t('settings.reset')}
           </button>
         </div>
         {msg && <p className="text-sm text-accent">{msg}</p>}
       </section>
 
       <section className="panel space-y-1 p-4 text-sm text-muted">
-        <h2 className="font-medium text-ink">Données</h2>
+        <h2 className="font-medium text-ink">{t('settings.data')}</h2>
         <p>
-          {cards.length} cartes · stats calculées sur {file.totals.total_decks.toLocaleString('fr-FR')} decks · import du {new Date(file.generatedAt).toLocaleDateString('fr-FR')}
+          {t('settings.dataSummary', {
+            cards: t('common.cards', { n: cards.length }),
+            decks: file.totals.total_decks,
+            date: date(file.generatedAt),
+          })}
         </p>
         <p>
-          Sources : <a className="underline" href={file.sources.stats} target="_blank" rel="noreferrer">riftdecks.com</a> (stats) et{' '}
-          <a className="underline" href="https://riftcodex.com" target="_blank" rel="noreferrer">riftcodex.com</a> (fiches). Pour rafraîchir : <code>npm run import</code>.
+          {t('settings.sources')} <a className="underline" href={file.sources.stats} target="_blank" rel="noreferrer">riftdecks.com</a>{' '}
+          {t('settings.sourcesStats')}{' '}
+          <a className="underline" href="https://riftcodex.com" target="_blank" rel="noreferrer">riftcodex.com</a> {t('settings.sourcesCards')}{' '}
+          <code>npm run import</code>.
         </p>
       </section>
     </div>

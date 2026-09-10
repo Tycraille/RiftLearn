@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useCards } from '../../data/CardsContext'
 import { CARD_TYPES, DOMAIN_INFO, DOMAINS, SET_LABELS } from '../../data/types'
 import { normalizeName } from '../../decks/decklist'
+import { useT } from '../../i18n/I18nContext'
 import { useSettings, useStates } from '../hooks'
 import { Cost, CardImage } from '../components/CardBits'
 import { ModeTabs, useStudyMode } from './Decks'
@@ -10,6 +11,7 @@ import { ModeTabs, useStudyMode } from './Decks'
 type Sort = 'play' | 'win' | 'name' | 'energy'
 
 export function CardsBrowser() {
+  const { t, num } = useT()
   const { cards } = useCards()
   const settings = useSettings()
   const [mode, setMode] = useStudyMode()
@@ -46,13 +48,13 @@ export function CardsBrowser() {
   return (
     <div className="space-y-4">
       <header className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">Cartes</h1>
+        <h1 className="text-2xl font-bold">{t('nav.cards')}</h1>
         <ModeTabs mode={mode} onChange={setMode} />
       </header>
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-6">
-        <input className="input lg:col-span-2" placeholder="Rechercher (nom ou texte)…" value={q} onChange={(e) => setQ(e.target.value)} />
+        <input className="input lg:col-span-2" placeholder={t('cards.search')} value={q} onChange={(e) => setQ(e.target.value)} />
         <select className="input" value={domain} onChange={(e) => setDomain(e.target.value)}>
-          <option value="">Tous domaines</option>
+          <option value="">{t('cards.allDomains')}</option>
           {DOMAINS.map((d) => (
             <option key={d} value={d}>
               {DOMAIN_INFO[d].label}
@@ -60,15 +62,15 @@ export function CardsBrowser() {
           ))}
         </select>
         <select className="input" value={type} onChange={(e) => setType(e.target.value)}>
-          <option value="">Tous types</option>
-          {CARD_TYPES.map((t) => (
-            <option key={t} value={t}>
-              {t}
+          <option value="">{t('cards.allTypes')}</option>
+          {CARD_TYPES.map((ct) => (
+            <option key={ct} value={ct}>
+              {ct}
             </option>
           ))}
         </select>
         <select className="input" value={set} onChange={(e) => setSet(e.target.value)}>
-          <option value="">Tous sets</option>
+          <option value="">{t('cards.allSets')}</option>
           {sets.map((s) => (
             <option key={s} value={s}>
               {SET_LABELS[s] ?? s}
@@ -76,18 +78,18 @@ export function CardsBrowser() {
           ))}
         </select>
         <select className="input" value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
-          <option value="play">Tri : taux de jeu</option>
-          <option value="win">Tri : taux de victoire</option>
-          <option value="energy">Tri : coût</option>
-          <option value="name">Tri : nom</option>
+          <option value="play">{t('cards.sort.play')}</option>
+          <option value="win">{t('cards.sort.win')}</option>
+          <option value="energy">{t('cards.sort.energy')}</option>
+          <option value="name">{t('cards.sort.name')}</option>
         </select>
       </div>
       <div className="flex items-center justify-between text-sm text-muted">
         <label className="flex items-center gap-2">
           <input type="checkbox" checked={metaOnly} onChange={(e) => setMetaOnly(e.target.checked)} />
-          Seulement ≥ {settings.playRateThreshold} % de taux de jeu
+          {t('cards.metaOnly', { threshold: settings.playRateThreshold })}
         </label>
-        <span>{list.length} cartes</span>
+        <span>{t('common.cards', { n: list.length })}</span>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
@@ -100,12 +102,12 @@ export function CardsBrowser() {
               <CardImage card={c} className="rounded-none" />
               <div className="space-y-1 p-2">
                 <div className="flex items-center gap-1.5">
-                  <span className={`h-2 w-2 shrink-0 rounded-full ${dot}`} title={status} />
+                  <span className={`h-2 w-2 shrink-0 rounded-full ${dot}`} title={t(`status.${status}`)} />
                   <span className="truncate text-sm font-medium">{c.name}</span>
                 </div>
                 <div className="flex items-center justify-between text-xs text-muted">
                   <Cost card={c} size="sm" />
-                  <span>{c.stats.play.toFixed(1)} %</span>
+                  <span>{t('common.percent', { n: num(c.stats.play, 1) })}</span>
                 </div>
               </div>
             </Link>
@@ -114,7 +116,7 @@ export function CardsBrowser() {
       </div>
       {list.length > limit && (
         <button className="btn-ghost w-full" onClick={() => setLimit((l) => l + 60)}>
-          Afficher plus ({list.length - limit} restantes)
+          {t('cards.showMore', { n: list.length - limit })}
         </button>
       )}
     </div>
