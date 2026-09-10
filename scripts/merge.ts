@@ -98,6 +98,17 @@ export function normalizeName(name: string): string {
     .trim()
 }
 
+/** Riftcodex renvoie parfois des entités HTML dans le texte brut ("[&gt;]", "&quot;"). */
+export function decodeEntities(s: string | null): string | null {
+  if (s == null) return s
+  return s
+    .replace(/&gt;/g, '>')
+    .replace(/&lt;/g, '<')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/&amp;/g, '&')
+}
+
 export function riftboundIdFromImg(img: string): string {
   // "/img/cards/riftbound/OGN/ogn-045-298_cropped.png" -> "ogn-045-298"
   const base = path.posix.basename(img)
@@ -135,9 +146,9 @@ export function merge(stats: RiftdecksStat[], codex: CodexCard[]): { cards: Card
       energy: c?.attributes.energy ?? null,
       might: c?.attributes.might ?? null,
       power: c?.attributes.power ?? null,
-      text: c?.text.plain ?? null,
-      textRich: c?.text.rich ?? null,
-      flavour: c?.text.flavour ?? null,
+      text: decodeEntities(c?.text.plain ?? null),
+      textRich: decodeEntities(c?.text.rich ?? null),
+      flavour: decodeEntities(c?.text.flavour ?? null),
       imageUrl: c?.media.image_url ?? RIFTDECKS_ORIGIN + s.full_img,
       imageFallback: RIFTDECKS_ORIGIN + s.full_img,
       tags: c?.tags ?? [],

@@ -90,7 +90,7 @@ export function makeQuestion(card: Card, pool: Card[], rng: Rng = Math.random, k
     }
     case 'name-from-text': {
       const wrong = distractorCards(card, pool, 3, rng).map((c) => c.name)
-      return finish(k, card, 'Quelle carte a cet effet ?', card.name, wrong, rng, { text: card.text! })
+      return finish(k, card, 'Quelle carte a cet effet ?', card.name, wrong, rng, { text: card.textRich ?? card.text! })
     }
     case 'name-from-image':
     default: {
