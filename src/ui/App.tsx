@@ -55,8 +55,10 @@ export function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/decks" element={<Decks />} />
             <Route path="/study/:deckId" element={<Study />} />
-            <Route path="/cards" element={<CardsBrowser />} />
-            <Route path="/cards/:cardId" element={<CardDetail />} />
+            {/* The detail is a child route: the list stays mounted (search, filters, scroll) under the modal. */}
+            <Route path="/cards" element={<CardsBrowser />}>
+              <Route path=":cardId" element={<CardDetail />} />
+            </Route>
             <Route path="/settings" element={<SettingsPage />} />
           </Routes>
         </div>
