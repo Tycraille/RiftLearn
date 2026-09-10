@@ -1,3 +1,4 @@
+import { ArrowLeft, PartyPopper } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useCards } from '../../data/CardsContext'
@@ -148,8 +149,9 @@ export function Study() {
   return (
     <div className="mx-auto flex min-h-dvh max-w-3xl flex-col px-3 py-3 md:px-6">
       <header className="mb-3 flex items-center justify-between text-sm text-muted">
-        <Link to="/decks" className="hover:text-ink">
-          ← {deck.label}
+        <Link to="/decks" className="inline-flex items-center gap-1 hover:text-ink">
+          <ArrowLeft size={16} className="shrink-0" aria-hidden />
+          {deck.label}
         </Link>
         <span>{t(`mode.${mode}.short`)}</span>
         <span>
@@ -272,7 +274,7 @@ function Done({ deck, mode, summary }: { deck: string; mode: StudyMode; summary:
   const mins = Math.max(1, Math.round((Date.now() - summary.startedAt) / 60_000))
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-4 p-6 text-center">
-      <div className="text-4xl">🎉</div>
+      <PartyPopper size={40} className="shrink-0 text-accent" aria-hidden />
       <h1 className="text-2xl font-bold">{t('study.done')}</h1>
       <p className="text-muted">
         {deck} · {t(`mode.${mode}.label`)}
