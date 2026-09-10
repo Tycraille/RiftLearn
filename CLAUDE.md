@@ -68,7 +68,12 @@ against the code and open issues, asks the maintainer the decisions that matter,
 scoped specification with acceptance criteria, and files an `enhancement` issue only after an
 explicit go.
 
-## Filing defects (QA role)
+## Testing and filing defects (QA role)
+
+Run `/qa` (project command in `.claude/commands/qa.md`) for a full campaign, `/qa <screens or
+brief sections>` for a targeted retest, or `/qa <suspected behavior>` to verify one potential bug.
+The session tests in the Browser pane, files one English issue per confirmed defect and writes a
+local report.
 
 The QA brief lives in `qa/BRIEF-QA.md` (untracked, local only). If that file is missing, say so
 and stop: do not invent a test plan. Issues are written in English and use the repository labels:
