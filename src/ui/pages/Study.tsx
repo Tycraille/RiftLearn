@@ -9,7 +9,7 @@ import type { MessageKey } from '../../i18n'
 import { useT } from '../../i18n/I18nContext'
 import { emptyState, formatInterval, preview, Rating, type Grade } from '../../srs/scheduler'
 import { STUDY_MODES, type StudyMode } from '../../study/modes'
-import { makeQuestion, type QuizQuestion } from '../../study/quiz'
+import { hiddenRegions, makeQuestion, NAME_REGIONS, type QuizQuestion } from '../../study/quiz'
 import { buildQueue, interleave } from '../../study/session'
 import { useDecks } from '../hooks'
 import { CardBack, CardImage, CardText, DomainBadge } from '../components/CardBits'
@@ -163,7 +163,7 @@ export function Study() {
           <QuizView q={question} chosen={chosen} onChoose={answerQuiz} />
         ) : mode === 'image' ? (
           <div className="space-y-4">
-            <CardImage card={current.card} hideName={!flipped} className="mx-auto w-full max-w-[320px] md:max-w-[360px]" />
+            <CardImage card={current.card} hide={flipped ? [] : NAME_REGIONS} className="mx-auto w-full max-w-[320px] md:max-w-[360px]" />
             {flipped && (
               <div className="panel p-4">
                 <CardBack card={current.card} showImage={false} />
@@ -231,12 +231,11 @@ function GradeButtons({ state, onGrade }: { state: CardState; onGrade: (g: Grade
 
 function QuizView({ q, chosen, onChoose }: { q: QuizQuestion; chosen: number | null; onChoose: (i: number) => void }) {
   const answered = chosen != null
-  const hideName = q.kind === 'name-from-image'
   return (
     <div className="space-y-4">
       <div className="panel p-4 text-center text-lg font-semibold">{q.prompt}</div>
       {q.image && (q.kind !== 'name-from-text') && (
-        <CardImage card={q.card} hideName={hideName && !answered} className="mx-auto w-full max-w-[260px]" />
+        <CardImage card={q.card} hide={answered ? [] : hiddenRegions(q.kind)} className="mx-auto w-full max-w-[260px]" />
       )}
       {q.text && (
         <div className="panel p-4">
