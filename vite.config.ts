@@ -1,6 +1,7 @@
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
-import { defineConfig } from 'vite'
+// defineConfig de vitest/config = celui de Vite + la clé `test` (sinon tsc refuse la propriété)
+import { defineConfig } from 'vitest/config'
 
 // BASE_PATH="/riftlearn/" pour un déploiement GitHub Pages sous un sous-chemin.
 export default defineConfig({

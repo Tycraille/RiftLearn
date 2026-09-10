@@ -27,6 +27,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      # Active GitHub Pages (source "GitHub Actions") si ce n'est pas déjà fait
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - run: npm run build
         env:
           BASE_PATH: /${{ github.event.repository.name }}/
