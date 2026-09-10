@@ -6,6 +6,8 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   base: process.env.BASE_PATH ?? '/',
   plugins: [react(), tailwindcss()],
+  // host: true = écoute sur toutes les interfaces, pour tester depuis un smartphone sur le même Wi-Fi
+  server: { host: true, port: 5173 },
   test: {
     environment: 'node',
     include: ['src/**/*.test.{ts,tsx}', 'scripts/**/*.test.ts'],
