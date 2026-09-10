@@ -1,0 +1,46 @@
+import { describe, expect, it } from 'vitest'
+import type { Card } from '../data/types'
+import { availableKinds, makeQuestion, type QuizKind } from './quiz'
+
+let seed = 42
+const rng = () => {
+  seed = (seed * 1664525 + 1013904223) % 4294967296
+  return seed / 4294967296
+}
+
+const mk = (id: string, name: string, energy: number | null, domain: Card['domain'] = 'calm', type: Card['type'] = 'Spell', text: string | null = 'effet ' + id): Card =>
+  ({ id, name, slug: id, set: 'OGN', setLabel: 'Origins', domain, domains: [domain], type, rarity: null, energy, might: null, power: 1, text, textRich: text, flavour: null, imageUrl: 'img-' + id, imageFallback: '', tags: [], stats: { play: 10, win: null, decks: 1, copies: 1, games: 1 } }) as Card
+
+const pool = [
+  mk('a', 'Defy', 1),
+  mk('b', 'Discipline', 2),
+  mk('c', 'Charm', 3),
+  mk('d', 'Gust', 1),
+  mk('e', 'Scuttle Crab', 2, 'chaos', 'Unit'),
+  mk('f', 'Star Spring', null, 'colorless', 'Battlefield', null),
+]
+
+describe('quiz', () => {
+  it('produit 4 options distinctes contenant la bonne réponse, pour chaque type de question', () => {
+    const kinds: QuizKind[] = ['energy', 'domain', 'name-from-text', 'name-from-image']
+    for (const kind of kinds) {
+      const q = makeQuestion(pool[0], pool, rng, kind)
+      expect(q.kind).toBe(kind)
+      expect(q.options).toHaveLength(4)
+      expect(new Set(q.options).size).toBe(4)
+      expect(q.options[q.answerIndex]).toBe(kind === 'energy' ? '1' : kind === 'domain' ? 'Calm' : 'Defy')
+    }
+  })
+
+  it('un champ de bataille sans coût ni texte ne propose que la question image', () => {
+    expect(availableKinds(pool[5])).toEqual(['name-from-image', 'domain'])
+    const q = makeQuestion(pool[5], pool, rng, 'energy')
+    expect(['name-from-image', 'domain']).toContain(q.kind)
+  })
+
+  it('préfère les distracteurs du même type et domaine', () => {
+    const q = makeQuestion(pool[0], pool, rng, 'name-from-text')
+    expect(q.options).not.toContain('Scuttle Crab')
+    expect(q.options).not.toContain('Star Spring')
+  })
+})
