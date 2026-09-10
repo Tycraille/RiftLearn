@@ -1,6 +1,7 @@
 import { useState, type CSSProperties } from 'react'
 import { DOMAIN_INFO, type Card, type Domain } from '../../data/types'
 import { useT } from '../../i18n/I18nContext'
+import type { CardRegion } from '../../study/quiz'
 
 // ---- Cost icons -------------------------------------------------------------
 
@@ -131,7 +132,17 @@ export function CardText({ text, className = '' }: { text: string | null; classN
 
 // ---- Image ------------------------------------------------------------------
 
-export function CardImage({ card, className = '', hideName = false }: { card: Card; className?: string; hideName?: boolean }) {
+// Riftbound layout: cost top-left, might top-right, type + name banner around 51-64% of the
+// height, rules text and flavour below, domain icon(s) at the right end of the footer.
+const REGION_MASKS: Record<CardRegion, string> = {
+  cost: 'left-0 top-0 h-[23%] w-[21%]',
+  might: 'right-0 top-0 h-[15%] w-[30%]',
+  banner: 'inset-x-0 top-[50%] h-[15%]',
+  lower: 'inset-x-0 bottom-0 h-[49%]',
+  'domain-icons': 'right-0 bottom-0 h-[7%] w-[14%]',
+}
+
+export function CardImage({ card, className = '', hide = [] }: { card: Card; className?: string; hide?: readonly CardRegion[] }) {
   const { t } = useT()
   // The URL is derived from the current card; we only remember which card id failed on the CDN,
   // otherwise the image would stay stuck on the first card when the prop changes.
@@ -141,21 +152,15 @@ export function CardImage({ card, className = '', hideName = false }: { card: Ca
     <div className={`relative overflow-hidden rounded-[4.5%] bg-panel-2 ${className}`}>
       <img
         src={src}
-        alt={hideName ? t('card.hiddenAlt') : card.name}
+        alt={hide.length ? t('card.hiddenAlt') : card.name}
         loading="lazy"
         draggable={false}
         className="block h-auto w-full select-none"
         onError={() => failedId !== card.id && setFailedId(card.id)}
       />
-      {hideName && (
-        <>
-          {/* Riftbound layout: cost top-left, might top-right,
-              type + name banner around 52-64% of the height, rules text and flavour below. */}
-          <div className="absolute left-0 top-0 h-[23%] w-[21%] bg-bg/95 backdrop-blur-md" />
-          <div className="absolute right-0 top-0 h-[15%] w-[30%] bg-bg/95 backdrop-blur-md" />
-          <div className="absolute inset-x-0 bottom-0 h-[49%] bg-bg/95 backdrop-blur-md" />
-        </>
-      )}
+      {hide.map((r) => (
+        <div key={r} className={`absolute ${REGION_MASKS[r]} bg-bg/95 backdrop-blur-md`} />
+      ))}
     </div>
   )
 }

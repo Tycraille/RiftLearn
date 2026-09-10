@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Card } from '../data/types'
 import { getI18n } from '../i18n'
-import { availableKinds, makeQuestion, type QuizKind } from './quiz'
+import { availableKinds, hiddenRegions, makeQuestion, type QuizKind } from './quiz'
 
 let seed = 42
 const rng = () => {
@@ -45,6 +45,13 @@ describe('quiz', () => {
     const q = makeQuestion(pool[0], pool, t, rng, 'name-from-text')
     expect(q.options).not.toContain('Scuttle Crab')
     expect(q.options).not.toContain('Star Spring')
+  })
+
+  it('masks the part of the image that gives the answer away, and only that part', () => {
+    expect(hiddenRegions('energy')).toEqual(['cost'])
+    // Power runes, type + name banner and footer icons are all colored by domain; rules text stays visible
+    expect(hiddenRegions('domain')).toEqual(['cost', 'banner', 'domain-icons'])
+    expect(hiddenRegions('name-from-image')).toEqual(['cost', 'might', 'lower'])
   })
 
   it('writes the prompt in the requested language', () => {

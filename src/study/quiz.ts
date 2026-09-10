@@ -16,6 +16,33 @@ export interface QuizQuestion {
   answerIndex: number
 }
 
+/**
+ * Areas of a Riftbound card image that can give an answer away:
+ * - `cost`: energy circle and power runes (top-left)
+ * - `might`: might value (top-right)
+ * - `banner`: type tag and name banner, tinted with the domain color
+ * - `lower`: everything from the type tag down (name, rules text, flavour, footer)
+ * - `domain-icons`: domain icon(s) in the footer (bottom-right)
+ */
+export type CardRegion = 'cost' | 'might' | 'banner' | 'lower' | 'domain-icons'
+
+/** Regions hidden when the name of the card must be guessed from its image. */
+export const NAME_REGIONS: readonly CardRegion[] = ['cost', 'might', 'lower']
+
+/** Regions of the image to hide until the question is answered. */
+export function hiddenRegions(kind: QuizKind): readonly CardRegion[] {
+  switch (kind) {
+    case 'energy':
+      return ['cost']
+    case 'domain':
+      return ['cost', 'banner', 'domain-icons']
+    case 'name-from-image':
+      return NAME_REGIONS
+    case 'name-from-text':
+      return []
+  }
+}
+
 export type Rng = () => number
 
 function shuffle<T>(arr: T[], rng: Rng): T[] {
