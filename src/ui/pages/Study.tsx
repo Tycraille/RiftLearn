@@ -55,7 +55,7 @@ export function Study() {
     let cancelled = false
     ;(async () => {
       const [settings, states, today] = await Promise.all([getSettings(), getStatesForMode(mode), countToday(mode)])
-      const q = buildQueue(d.cards, states, settings, today)
+      const q = buildQueue(d.cards, states, settings, today, { newOrder: d.newOrder })
       const items = interleave(q).map((card) => ({ card, state: states.get(card.id) ?? emptyState(card.id, mode) }))
       if (!cancelled) {
         setQueue(items)

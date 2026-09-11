@@ -47,6 +47,8 @@ export interface Settings {
   id: 'main'
   /** play-rate threshold (%) for derived decks */
   playRateThreshold: number
+  /** presence threshold (%) of a card in a legend's decks for legend decks */
+  legendPresenceThreshold: number
   dailyNewLimit: number
   dailyReviewLimit: number
   enabledModes: StudyMode[]
@@ -57,6 +59,7 @@ export interface Settings {
 export const DEFAULT_SETTINGS: Settings = {
   id: 'main',
   playRateThreshold: 5,
+  legendPresenceThreshold: 20,
   dailyNewLimit: 15,
   dailyReviewLimit: 200,
   enabledModes: ['image', 'name', 'quiz'],

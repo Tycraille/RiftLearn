@@ -10,7 +10,7 @@ import { STUDY_MODES, type StudyMode } from '../../study/modes'
 import { deckCounts } from '../../study/session'
 import { useDecks, useSettings, useStates } from '../hooks'
 
-const SECTIONS: DeckKind[] = ['all', 'custom', 'domain', 'type', 'set']
+const SECTIONS: DeckKind[] = ['all', 'custom', 'legend', 'domain', 'type', 'set']
 
 export function useStudyMode(): [StudyMode, (m: StudyMode) => void] {
   const settings = useSettings()
@@ -113,9 +113,12 @@ function DeckTile({ deck, mode, states }: { deck: Deck; mode: StudyMode; states:
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2">
           {deck.color && <span className="h-3 w-3 rounded-full" style={{ background: deck.color }} />}
-          <div className="font-semibold">{deck.label}</div>
+          <div>
+            <div className="font-semibold">{deck.label}</div>
+            {deck.legendDecks != null && <div className="text-xs text-muted">{t('decks.legendDecks', { n: deck.legendDecks })}</div>}
+          </div>
         </div>
-        <span className="text-xs text-muted">{t('common.cards', { n: c.total })}</span>
+        <span className="shrink-0 text-xs text-muted">{t('common.cards', { n: c.total })}</span>
       </div>
       <div className="h-1.5 overflow-hidden rounded bg-panel-2">
         <div className="h-full bg-accent" style={{ width: `${pct}%` }} />
